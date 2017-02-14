@@ -28,9 +28,9 @@ import java.io.IOException;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.kernel.api.impl.index.storage.DirectoryFactory;
 import org.neo4j.kernel.api.index.IndexAccessor;
-import org.neo4j.kernel.api.index.IndexConfiguration;
-import org.neo4j.kernel.api.schema.IndexDescriptorFactory;
 import org.neo4j.kernel.api.index.IndexProviderCompatibilityTestSuite;
+import org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor;
+import org.neo4j.kernel.api.schema_new.index.NewIndexDescriptorFactory;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.configuration.Settings;
 import org.neo4j.kernel.impl.api.index.IndexUpdateMode;
@@ -42,9 +42,10 @@ import static org.neo4j.helpers.collection.MapUtil.stringMap;
 
 public class LuceneSchemaIndexProviderTest extends IndexProviderCompatibilityTestSuite
 {
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    private static final NewIndexDescriptor descriptor = NewIndexDescriptorFactory.forLabel( 1, 1 );
 
     @Override
     protected LuceneSchemaIndexProvider createIndexProvider()
@@ -60,9 +61,8 @@ public class LuceneSchemaIndexProviderTest extends IndexProviderCompatibilityTes
                 new DirectoryFactory.InMemoryDirectoryFactory() );
         expectedException.expect( UnsupportedOperationException.class );
 
-        readOnlyIndexProvider.getPopulator( 1L, IndexDescriptorFactory.of( 1, 1 ),
-                IndexConfiguration.NON_UNIQUE,
-                new IndexSamplingConfig( readOnlyConfig ) );
+        readOnlyIndexProvider.getPopulator( 1L, descriptor, new IndexSamplingConfig(
+                readOnlyConfig ) );
     }
 
     @Test
@@ -103,8 +103,7 @@ public class LuceneSchemaIndexProviderTest extends IndexProviderCompatibilityTes
     private IndexAccessor getIndexAccessor( Config readOnlyConfig, LuceneSchemaIndexProvider indexProvider )
             throws IOException
     {
-        return indexProvider.getOnlineAccessor( 1L, IndexConfiguration.NON_UNIQUE,
-                new IndexSamplingConfig( readOnlyConfig ) );
+        return indexProvider.getOnlineAccessor( 1L, descriptor, new IndexSamplingConfig( readOnlyConfig ) );
     }
 
     private LuceneSchemaIndexProvider getLuceneSchemaIndexProvider( Config config, DirectoryFactory directoryFactory )

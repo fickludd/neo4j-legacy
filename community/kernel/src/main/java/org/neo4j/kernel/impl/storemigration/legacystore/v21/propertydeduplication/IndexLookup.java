@@ -110,9 +110,8 @@ class IndexLookup implements AutoCloseable
         IndexReader reader = readerCache.get( rule );
         if ( reader == null )
         {
-            IndexConfiguration indexConfig = IndexConfiguration.of( rule );
             IndexAccessor accessor = schemaIndexProvider.getOnlineAccessor(
-                    rule.getId(), indexConfig, samplingConfig );
+                    rule.getId(), rule.getIndexDescriptor(), samplingConfig );
             indexAccessors.add( accessor );
             reader = accessor.newReader();
             readerCache.put( rule, reader );

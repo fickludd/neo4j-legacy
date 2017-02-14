@@ -33,6 +33,7 @@ import org.neo4j.kernel.api.index.IndexEntryUpdate;
 import org.neo4j.kernel.api.schema.IndexDescriptor;
 import org.neo4j.kernel.api.index.IndexUpdater;
 import org.neo4j.kernel.api.index.InternalIndexState;
+import org.neo4j.kernel.api.schema_new.index.IndexBoundary;
 import org.neo4j.kernel.impl.api.index.updater.DelegatingIndexUpdater;
 import org.neo4j.storageengine.api.schema.IndexReader;
 
@@ -141,9 +142,8 @@ public class TentativeConstraintIndexProxy extends AbstractDelegatingIndexProxy
     {
         if ( !failures.isEmpty() )
         {
-            IndexDescriptor descriptor = getDescriptor();
             throw new UniquenessConstraintVerificationFailedKernelException(
-                    new UniquenessConstraint( descriptor.descriptor() ),
+                    new UniquenessConstraint( IndexBoundary.map( getDescriptor() ).descriptor() ),
                     new HashSet<>( failures ) );
         }
     }

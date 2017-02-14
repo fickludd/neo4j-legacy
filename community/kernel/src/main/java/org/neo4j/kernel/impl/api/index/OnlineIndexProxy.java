@@ -26,11 +26,10 @@ import java.util.concurrent.Future;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.kernel.api.exceptions.index.IndexPopulationFailedKernelException;
 import org.neo4j.kernel.api.index.IndexAccessor;
-import org.neo4j.kernel.api.index.IndexConfiguration;
-import org.neo4j.kernel.api.schema.IndexDescriptor;
 import org.neo4j.kernel.api.index.IndexUpdater;
 import org.neo4j.kernel.api.index.InternalIndexState;
 import org.neo4j.kernel.api.index.SchemaIndexProvider;
+import org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor;
 import org.neo4j.storageengine.api.schema.IndexReader;
 import org.neo4j.storageengine.api.schema.PopulationProgress;
 import org.neo4j.kernel.impl.api.index.updater.UpdateCountingIndexUpdater;
@@ -40,11 +39,10 @@ import static org.neo4j.helpers.FutureAdapter.VOID;
 public class OnlineIndexProxy implements IndexProxy
 {
     private final long indexId;
-    private final IndexDescriptor descriptor;
+    private final NewIndexDescriptor descriptor;
     final IndexAccessor accessor;
     private final IndexStoreView storeView;
     private final SchemaIndexProvider.Descriptor providerDescriptor;
-    private final IndexConfiguration configuration;
     private final IndexCountsRemover indexCountsRemover;
 
     // About this flag: there are two online "modes", you might say...
@@ -73,7 +71,7 @@ public class OnlineIndexProxy implements IndexProxy
     //   slightly more costly, but shouldn't make that big of a difference hopefully.
     private final boolean forcedIdempotentMode;
 
-    public OnlineIndexProxy( long indexId, IndexDescriptor descriptor, IndexConfiguration configuration,
+    public OnlineIndexProxy( long indexId, NewIndexDescriptor descriptor,
             IndexAccessor accessor, IndexStoreView storeView, SchemaIndexProvider.Descriptor providerDescriptor,
             boolean forcedIdempotentMode )
     {
@@ -82,7 +80,6 @@ public class OnlineIndexProxy implements IndexProxy
         this.storeView = storeView;
         this.providerDescriptor = providerDescriptor;
         this.accessor = accessor;
-        this.configuration = configuration;
         this.forcedIdempotentMode = forcedIdempotentMode;
         this.indexCountsRemover = new IndexCountsRemover( storeView, indexId );
     }
@@ -112,7 +109,7 @@ public class OnlineIndexProxy implements IndexProxy
     }
 
     @Override
-    public IndexDescriptor getDescriptor()
+    public NewIndexDescriptor getDescriptor()
     {
         return descriptor;
     }
@@ -188,12 +185,6 @@ public class OnlineIndexProxy implements IndexProxy
     public ResourceIterator<File> snapshotFiles() throws IOException
     {
         return accessor.snapshotFiles();
-    }
-
-    @Override
-    public IndexConfiguration config()
-    {
-        return configuration;
     }
 
     @Override

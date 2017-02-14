@@ -36,11 +36,9 @@ import static org.junit.Assert.assertThat;
         " errors or warnings in some IDEs about test classes needing a public zero-arg constructor." )
 public class UniqueIndexAccessorCompatibility extends IndexAccessorCompatibility
 {
-    private static final NewIndexDescriptor index = NewIndexDescriptorFactory.uniqueForLabel( 1000, 100 );
-
     public UniqueIndexAccessorCompatibility( IndexProviderCompatibilityTestSuite testSuite )
     {
-        super( testSuite, true );
+        super( testSuite, NewIndexDescriptorFactory.uniqueForLabel( 1000, 100 ), true );
     }
 
     @Test
@@ -53,8 +51,8 @@ public class UniqueIndexAccessorCompatibility extends IndexAccessorCompatibility
         // the exact-match filtering we do on index seeks in StateHandlingStatementOperations.
 
         updateAndCommit( asList(
-                IndexEntryUpdate.add( 1L, index, "a" ),
-                IndexEntryUpdate.add( 2L, index, "a" ) ) );
+                IndexEntryUpdate.add( 1L, descriptor, "a" ),
+                IndexEntryUpdate.add( 2L, descriptor, "a" ) ) );
 
         assertThat( getAllNodesWithProperty( "a" ), equalTo( asList( 1L, 2L ) ) );
     }
@@ -63,9 +61,9 @@ public class UniqueIndexAccessorCompatibility extends IndexAccessorCompatibility
     public void testIndexSeekAndScan() throws Exception
     {
         updateAndCommit( asList(
-                IndexEntryUpdate.add( 1L, index, "a" ),
-                IndexEntryUpdate.add( 2L, index, "b" ),
-                IndexEntryUpdate.add( 3L, index, "c" ) ) );
+                IndexEntryUpdate.add( 1L, descriptor, "a" ),
+                IndexEntryUpdate.add( 2L, descriptor, "b" ),
+                IndexEntryUpdate.add( 3L, descriptor, "c" ) ) );
 
         assertThat( getAllNodesWithProperty( "a" ), equalTo( asList( 1L ) ) );
         assertThat( getAllNodes(), equalTo( asList( 1L, 2L, 3L ) ) );

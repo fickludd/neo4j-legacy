@@ -29,12 +29,11 @@ import org.neo4j.kernel.api.exceptions.index.IndexNotFoundKernelException;
 import org.neo4j.kernel.api.exceptions.index.IndexPopulationFailedKernelException;
 import org.neo4j.kernel.api.exceptions.schema.ConstraintVerificationFailedKernelException;
 import org.neo4j.kernel.api.index.IndexAccessor;
-import org.neo4j.kernel.api.index.IndexConfiguration;
-import org.neo4j.kernel.api.schema.IndexDescriptor;
 import org.neo4j.kernel.api.index.IndexPopulator;
 import org.neo4j.kernel.api.index.IndexUpdater;
 import org.neo4j.kernel.api.index.InternalIndexState;
 import org.neo4j.kernel.api.index.SchemaIndexProvider;
+import org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor;
 import org.neo4j.storageengine.api.schema.IndexReader;
 import org.neo4j.storageengine.api.schema.PopulationProgress;
 
@@ -75,7 +74,7 @@ public interface IndexProxy
      */
     Future<Void> close() throws IOException;
 
-    IndexDescriptor getDescriptor();
+    NewIndexDescriptor getDescriptor();
 
     SchemaIndexProvider.Descriptor getProviderDescriptor();
 
@@ -107,6 +106,4 @@ public interface IndexProxy
     void validate() throws ConstraintVerificationFailedKernelException, IndexPopulationFailedKernelException;
 
     ResourceIterator<File> snapshotFiles() throws IOException;
-
-    IndexConfiguration config();
 }

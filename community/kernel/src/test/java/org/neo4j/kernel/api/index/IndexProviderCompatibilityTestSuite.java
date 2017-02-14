@@ -63,11 +63,12 @@ public abstract class IndexProviderCompatibilityTestSuite
     public abstract static class Compatibility
     {
         protected final SchemaIndexProvider indexProvider;
-        protected NewIndexDescriptor descriptor = NewIndexDescriptorFactory.forLabel( 1, 2 );
+        protected NewIndexDescriptor descriptor;
 
-        public Compatibility( IndexProviderCompatibilityTestSuite testSuite )
+        public Compatibility( IndexProviderCompatibilityTestSuite testSuite, NewIndexDescriptor descriptor )
         {
             this.indexProvider = testSuite.createIndexProvider();
+            this.descriptor = descriptor;
         }
     }
 }

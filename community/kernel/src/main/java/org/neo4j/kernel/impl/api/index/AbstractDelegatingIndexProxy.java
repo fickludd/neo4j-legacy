@@ -28,11 +28,10 @@ import org.neo4j.kernel.api.exceptions.index.IndexActivationFailedKernelExceptio
 import org.neo4j.kernel.api.exceptions.index.IndexNotFoundKernelException;
 import org.neo4j.kernel.api.exceptions.index.IndexPopulationFailedKernelException;
 import org.neo4j.kernel.api.exceptions.schema.ConstraintVerificationFailedKernelException;
-import org.neo4j.kernel.api.index.IndexConfiguration;
-import org.neo4j.kernel.api.schema.IndexDescriptor;
 import org.neo4j.kernel.api.index.IndexUpdater;
 import org.neo4j.kernel.api.index.InternalIndexState;
 import org.neo4j.kernel.api.index.SchemaIndexProvider;
+import org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor;
 import org.neo4j.storageengine.api.schema.IndexReader;
 import org.neo4j.storageengine.api.schema.PopulationProgress;
 
@@ -65,7 +64,7 @@ public abstract class AbstractDelegatingIndexProxy implements IndexProxy
     }
 
     @Override
-    public IndexDescriptor getDescriptor()
+    public NewIndexDescriptor getDescriptor()
     {
         return getDelegate().getDescriptor();
     }
@@ -140,11 +139,5 @@ public abstract class AbstractDelegatingIndexProxy implements IndexProxy
     public ResourceIterator<File> snapshotFiles() throws IOException
     {
         return getDelegate().snapshotFiles();
-    }
-
-    @Override
-    public IndexConfiguration config()
-    {
-        return getDelegate().config();
     }
 }
