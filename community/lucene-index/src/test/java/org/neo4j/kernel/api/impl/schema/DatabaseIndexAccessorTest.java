@@ -75,7 +75,8 @@ public class DatabaseIndexAccessorTest
     private final long nodeId = 1, nodeId2 = 2;
     private final Object value = "value", value2 = 40;
     private DirectoryFactory.InMemoryDirectoryFactory dirFactory;
-    private NewIndexDescriptor index = NewIndexDescriptorFactory.forLabel( 0, 0 );
+    private static final NewIndexDescriptor indexDescriptor = NewIndexDescriptorFactory.forLabel( 0, 0 );
+    private static final NewIndexDescriptor uniqueIndexDescriptor = NewIndexDescriptorFactory.uniqueForLabel( 0, 0 );
 
     @Parameterized.Parameters( name = "{0}" )
     public static Collection<IOFunction<DirectoryFactory,LuceneIndexAccessor>[]> implementations()
@@ -83,7 +84,7 @@ public class DatabaseIndexAccessorTest
         final File dir = new File( "dir" );
         return Arrays.asList(
                 arg( dirFactory1 -> {
-                    SchemaIndex index = LuceneSchemaIndexBuilder.create()
+                    SchemaIndex index = LuceneSchemaIndexBuilder.create( indexDescriptor )
                             .withFileSystem( fileSystemRule.get() )
                             .withDirectoryFactory( dirFactory1 )
                             .withIndexRootFolder( dir )
@@ -95,8 +96,7 @@ public class DatabaseIndexAccessorTest
                     return new LuceneIndexAccessor( index );
                 } ),
                 arg( dirFactory1 -> {
-                    SchemaIndex index = LuceneSchemaIndexBuilder.create()
-                            .uniqueIndex()
+                    SchemaIndex index = LuceneSchemaIndexBuilder.create( uniqueIndexDescriptor )
                             .withFileSystem( fileSystemRule.get() )
                             .withDirectoryFactory( dirFactory1 )
                             .withIndexRootFolder( dir )
@@ -324,17 +324,17 @@ public class DatabaseIndexAccessorTest
 
     private IndexEntryUpdate add( long nodeId, Object value )
     {
-        return IndexEntryUpdate.add( nodeId, index, value );
+        return IndexEntryUpdate.add( nodeId, indexDescriptor, value );
     }
 
     private IndexEntryUpdate remove( long nodeId, Object value )
     {
-        return IndexEntryUpdate.remove( nodeId, index, value );
+        return IndexEntryUpdate.remove( nodeId, indexDescriptor, value );
     }
 
     private IndexEntryUpdate change( long nodeId, Object valueBefore, Object valueAfter )
     {
-        return IndexEntryUpdate.change( nodeId, index, valueBefore, valueAfter );
+        return IndexEntryUpdate.change( nodeId, indexDescriptor, valueBefore, valueAfter );
     }
 
     private void updateAndCommit( List<IndexEntryUpdate> nodePropertyUpdates )

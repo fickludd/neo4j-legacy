@@ -66,7 +66,8 @@ public class DatabaseCompositeIndexAccessorTest
     private final long nodeId = 1, nodeId2 = 2;
     private final Object[] value = new String[]{"value", "valuex"}, value2 = new Integer[]{40, 42};
     private DirectoryFactory.InMemoryDirectoryFactory dirFactory;
-    private final NewIndexDescriptor index = NewIndexDescriptorFactory.forLabel( 0, 0 );
+    private static final NewIndexDescriptor indexDescriptor = NewIndexDescriptorFactory.forLabel( 0, 0 );
+    private static final NewIndexDescriptor uniqueIndexDescriptor = NewIndexDescriptorFactory.uniqueForLabel( 0, 0 );
 
     @Parameterized.Parameters( name = "{0}" )
     public static Collection<IOFunction<DirectoryFactory,LuceneIndexAccessor>[]> implementations()
@@ -74,7 +75,7 @@ public class DatabaseCompositeIndexAccessorTest
         final File dir = new File( "dir" );
         return Arrays.asList(
                 arg( dirFactory1 -> {
-                    SchemaIndex index = LuceneSchemaIndexBuilder.create()
+                    SchemaIndex index = LuceneSchemaIndexBuilder.create( indexDescriptor )
                             .withFileSystem( fileSystemRule.get() )
                             .withDirectoryFactory( dirFactory1 )
                             .withIndexRootFolder( dir )
@@ -86,8 +87,7 @@ public class DatabaseCompositeIndexAccessorTest
                     return new LuceneIndexAccessor( index );
                 } ),
                 arg( dirFactory1 -> {
-                    SchemaIndex index = LuceneSchemaIndexBuilder.create()
-                            .uniqueIndex()
+                    SchemaIndex index = LuceneSchemaIndexBuilder.create( uniqueIndexDescriptor )
                             .withFileSystem( fileSystemRule.get() )
                             .withDirectoryFactory( dirFactory1 )
                             .withIndexRootFolder( dir )
@@ -156,7 +156,7 @@ public class DatabaseCompositeIndexAccessorTest
 
     private IndexEntryUpdate add( long nodeId, Object[] values )
     {
-        return IndexEntryUpdate.add( nodeId, index, values );
+        return IndexEntryUpdate.add( nodeId, indexDescriptor, values );
     }
 
     private void updateAndCommit( List<IndexEntryUpdate> nodePropertyUpdates )

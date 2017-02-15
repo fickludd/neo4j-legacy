@@ -36,12 +36,13 @@ import org.neo4j.kernel.api.impl.index.partition.PartitionSearcher;
 import org.neo4j.kernel.api.impl.schema.LuceneDocumentStructure;
 import org.neo4j.kernel.api.impl.schema.sampler.NonUniqueLuceneIndexSampler;
 import org.neo4j.kernel.api.impl.schema.sampler.UniqueLuceneIndexSampler;
-import org.neo4j.kernel.api.index.IndexConfiguration;
+import org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor;
 import org.neo4j.kernel.impl.api.index.sampling.IndexSamplingConfig;
 import org.neo4j.storageengine.api.schema.IndexReader;
 import org.neo4j.storageengine.api.schema.IndexSampler;
 
 import static org.neo4j.kernel.api.impl.schema.LuceneDocumentStructure.NODE_ID_KEY;
+import static org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor.Type.UNIQUE;
 
 /**
  * Schema index reader that is able to read/sample a single partition of a partitioned Lucene index.
@@ -51,17 +52,17 @@ import static org.neo4j.kernel.api.impl.schema.LuceneDocumentStructure.NODE_ID_K
 public class SimpleIndexReader implements IndexReader
 {
     private PartitionSearcher partitionSearcher;
-    private IndexConfiguration indexConfiguration;
+    private NewIndexDescriptor descriptor;
     private final IndexSamplingConfig samplingConfig;
     private TaskCoordinator taskCoordinator;
 
     public SimpleIndexReader( PartitionSearcher partitionSearcher,
-            IndexConfiguration indexConfiguration,
+            NewIndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TaskCoordinator taskCoordinator )
     {
         this.partitionSearcher = partitionSearcher;
-        this.indexConfiguration = indexConfiguration;
+        this.descriptor = descriptor;
         this.samplingConfig = samplingConfig;
         this.taskCoordinator = taskCoordinator;
     }
@@ -70,7 +71,7 @@ public class SimpleIndexReader implements IndexReader
     public IndexSampler createSampler()
     {
         TaskControl taskControl = taskCoordinator.newInstance();
-        if ( indexConfiguration.isUnique() )
+        if ( descriptor.type() == UNIQUE )
         {
             return new UniqueLuceneIndexSampler( getIndexSearcher(), taskControl );
         }
