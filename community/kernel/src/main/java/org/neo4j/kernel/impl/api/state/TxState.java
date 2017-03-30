@@ -46,6 +46,7 @@ import org.neo4j.kernel.api.schema_new.constaints.IndexBackedConstraintDescripto
 import org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor;
 import org.neo4j.kernel.api.txstate.RelationshipChangeVisitorAdapter;
 import org.neo4j.kernel.api.txstate.TransactionState;
+import org.neo4j.kernel.impl.api.KernelStatement;
 import org.neo4j.kernel.impl.api.RelationshipVisitor;
 import org.neo4j.kernel.impl.api.cursor.TxAllPropertyCursor;
 import org.neo4j.kernel.impl.api.cursor.TxIteratorRelationshipCursor;
@@ -288,6 +289,13 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
                 visitor.visitCreatedRelationshipTypeToken( entry.getValue(), entry.getKey() );
             }
         }
+    }
+
+    @Override
+    public void acceptAndDestroy( TxStateVisitor visitor )
+            throws ConstraintValidationException, CreateConstraintFailureException
+    {
+        accept( visitor );
     }
 
     private static DiffSetsVisitor<Long> deletedNodesVisitor( final TxStateVisitor visitor )
@@ -594,12 +602,28 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     }
 
     @Override
+    public void nodeDoAddProperty( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, long nodeId,
+            DefinedProperty newProperty )
+    {
+        nodeDoAddProperty( nodeId, newProperty );
+        indexTxStateUpdater.onPropertyAdd( state, nodeId, newProperty );
+    }
+
+    @Override
     public void nodeDoChangeProperty( long nodeId, DefinedProperty replacedProperty, DefinedProperty newProperty )
     {
         getOrCreateNodeState( nodeId ).changeProperty( newProperty );
         nodePropertyChanges().changeProperty( nodeId, replacedProperty.propertyKeyId(),
                 replacedProperty.value(), newProperty.value() );
         dataChanged();
+    }
+
+    @Override
+    public void nodeDoChangeProperty( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, long nodeId,
+            DefinedProperty replacedProperty, DefinedProperty newProperty )
+    {
+        nodeDoChangeProperty( nodeId, replacedProperty, newProperty );
+        indexTxStateUpdater.onPropertyChange( state, nodeId, replacedProperty, newProperty );
     }
 
     @Override
@@ -642,6 +666,14 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     }
 
     @Override
+    public void nodeDoRemoveProperty( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, long nodeId,
+            DefinedProperty removedProperty )
+    {
+        nodeDoRemoveProperty( nodeId, removedProperty );
+        indexTxStateUpdater.onPropertyRemove( state, nodeId, removedProperty );
+    }
+
+    @Override
     public void relationshipDoRemoveProperty( long relationshipId, DefinedProperty removedProperty )
     {
         getOrCreateRelationshipState( relationshipId ).removeProperty( removedProperty );
@@ -664,11 +696,27 @@ public final class TxState implements TransactionState, RelationshipVisitor.Home
     }
 
     @Override
+    public void nodeDoAddLabel( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, int labelId, long nodeId )
+    {
+        nodeDoAddLabel( labelId, nodeId );
+        indexTxStateUpdater.onLabelChange( state, labelId, nodeId,
+                IndexTxStateUpdater.LabelChangeType.ADDED_LABEL );
+    }
+
+    @Override
     public void nodeDoRemoveLabel( int labelId, long nodeId )
     {
         getOrCreateLabelStateNodeDiffSets( labelId ).remove( nodeId );
         getOrCreateNodeStateLabelDiffSets( nodeId ).remove( labelId );
         dataChanged();
+    }
+
+    @Override
+    public void nodeDoRemoveLabel( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, int labelId, long nodeId )
+    {
+        nodeDoRemoveLabel( labelId, nodeId );
+        indexTxStateUpdater.onLabelChange( state, labelId, nodeId,
+                IndexTxStateUpdater.LabelChangeType.REMOVED_LABEL );
     }
 
     @Override

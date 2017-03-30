@@ -46,6 +46,8 @@ public interface ReadableTransactionState
 {
     void accept( TxStateVisitor visitor ) throws ConstraintValidationException, CreateConstraintFailureException;
 
+    void acceptAndDestroy( TxStateVisitor visitor ) throws ConstraintValidationException, CreateConstraintFailureException;
+
     boolean hasChanges();
 
     // ENTITY RELATED

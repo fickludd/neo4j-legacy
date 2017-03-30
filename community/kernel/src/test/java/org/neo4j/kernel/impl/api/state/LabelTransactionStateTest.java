@@ -246,7 +246,7 @@ public class LabelTransactionStateTest
     public void should_return_true_when_adding_new_label() throws Exception
     {
         // GIVEN
-        when( storeStatement.acquireSingleNodeCursor( 1337 ) ).thenReturn( asNodeCursor( 1337 ) );
+        when( storeStatement.acquireSingleNodeCursor( 1337 ) ).thenAnswer( i -> asNodeCursor( 1337 ) );
         when( store.nodeGetProperties( eq( storeStatement ), any( NodeItem.class ) ) )
                 .thenReturn( asPropertyCursor() );
 
@@ -277,7 +277,7 @@ public class LabelTransactionStateTest
     public void should_return_true_when_removing_existing_label() throws Exception
     {
         // GIVEN
-        when( storeStatement.acquireSingleNodeCursor( 1337 ) ).thenReturn( asNodeCursor( 1337,
+        when( storeStatement.acquireSingleNodeCursor( 1337 ) ).thenAnswer( i -> asNodeCursor( 1337,
                 StubCursors.labels( 12 ) ) );
         when( store.nodeGetProperties( eq( storeStatement ), any( NodeItem.class ) ) )
                 .thenReturn( asPropertyCursor() );
@@ -293,7 +293,7 @@ public class LabelTransactionStateTest
     public void should_return_true_when_removing_non_existant_label() throws Exception
     {
         // GIVEN
-        when( storeStatement.acquireSingleNodeCursor( 1337 ) ).thenReturn( asNodeCursor( 1337 ) );
+        when( storeStatement.acquireSingleNodeCursor( 1337 ) ).thenAnswer( i -> asNodeCursor( 1337 ) );
 
         // WHEN
         boolean removed = txContext.nodeRemoveLabel( state, 1337, 12 );
@@ -337,7 +337,7 @@ public class LabelTransactionStateTest
         for ( Labels nodeLabels : labels )
         {
             when( storeStatement.acquireSingleNodeCursor( nodeLabels.nodeId ) )
-                    .thenReturn( asNodeCursor( nodeLabels.nodeId, StubCursors.labels( nodeLabels.labelIds ) ) );
+                    .thenAnswer( i -> asNodeCursor( nodeLabels.nodeId, StubCursors.labels( nodeLabels.labelIds ) ) );
             when( store.nodeGetProperties( eq( storeStatement ), any( NodeItem.class ) ) )
                     .thenReturn( asPropertyCursor() );
 

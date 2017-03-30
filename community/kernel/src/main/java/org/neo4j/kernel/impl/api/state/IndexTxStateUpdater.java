@@ -64,6 +64,18 @@ public class IndexTxStateUpdater
         REMOVED_LABEL
     };
 
+    public void onLabelChange( KernelStatement state, int labelId, long nodeId, LabelChangeType changeType )
+    {
+        try
+        {
+            onLabelChange( state, labelId, readOps.nodeCursorById( state, nodeId ).get(), changeType );
+        }
+        catch ( EntityNotFoundException e )
+        {
+            throw new RuntimeException( e );
+        }
+    }
+
     public void onLabelChange( KernelStatement state, int labelId, NodeItem node, LabelChangeType changeType )
             throws EntityNotFoundException
     {
@@ -96,6 +108,18 @@ public class IndexTxStateUpdater
 
     // PROPERTY CHANGES
 
+    public void onPropertyAdd( KernelStatement state, long nodeId, DefinedProperty after )
+    {
+        try
+        {
+            onPropertyAdd( state, readOps.nodeCursorById( state, nodeId ).get(), after );
+        }
+        catch ( EntityNotFoundException e )
+        {
+            throw new RuntimeException( e );
+        }
+    }
+
     public void onPropertyAdd( KernelStatement state, NodeItem node, DefinedProperty after )
             throws EntityNotFoundException
     {
@@ -109,6 +133,18 @@ public class IndexTxStateUpdater
         } );
     }
 
+    public void onPropertyRemove( KernelStatement state, long nodeId, DefinedProperty before )
+    {
+        try
+        {
+            onPropertyRemove( state, readOps.nodeCursorById( state, nodeId ).get(), before );
+        }
+        catch ( EntityNotFoundException e )
+        {
+            throw new RuntimeException( e );
+        }
+    }
+
     public void onPropertyRemove( KernelStatement state, NodeItem node, DefinedProperty before )
             throws EntityNotFoundException
     {
@@ -119,6 +155,18 @@ public class IndexTxStateUpdater
                     getOrderedPropertyValues( state, node, before, index.schema().getPropertyIds() );
             state.txState().indexDoUpdateEntry( index.schema(), node.id(), values, null );
         } );
+    }
+
+    public void onPropertyChange( KernelStatement state, long nodeId, DefinedProperty before, DefinedProperty after )
+    {
+        try
+        {
+            onPropertyChange( state, readOps.nodeCursorById( state, nodeId ).get(), before, after );
+        }
+        catch ( EntityNotFoundException e )
+        {
+            throw new RuntimeException( e );
+        }
     }
 
     public void onPropertyChange( KernelStatement state, NodeItem node, DefinedProperty before, DefinedProperty after )

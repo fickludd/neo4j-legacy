@@ -99,7 +99,7 @@ public class StateHandlingStatementOperationsTest
         StoreStatement storeStatement = mock( StoreStatement.class );
         when( state.getStoreStatement() ).thenReturn( storeStatement );
         when( inner.indexesGetForLabel( 0 ) ).thenReturn( iterator( NewIndexDescriptorFactory.forLabel( 0, 0 ) ) );
-        when( storeStatement.acquireSingleNodeCursor( anyLong() ) ).thenReturn( asNodeCursor( 0 ) );
+        when( storeStatement.acquireSingleNodeCursor( anyLong() ) ).thenAnswer( i -> asNodeCursor( 0 ) );
         when( inner.nodeGetProperties( eq( storeStatement ), any( NodeItem.class ) ) ).
                 thenReturn( asPropertyCursor() );
 
@@ -113,7 +113,7 @@ public class StateHandlingStatementOperationsTest
         ctx.nodeRemoveLabel( state, 0, 0 );
 
         // one for add and one for remove
-        verify( storeStatement, times( 2 ) ).acquireSingleNodeCursor( 0 );
+        verify( storeStatement, times( 3 ) ).acquireSingleNodeCursor( 0 );
         verifyNoMoreInteractions( storeStatement );
     }
 

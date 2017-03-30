@@ -110,6 +110,7 @@ import static org.neo4j.collection.primitive.PrimitiveIntCollections.filter;
 import static org.neo4j.collection.primitive.PrimitiveLongCollections.resourceIterator;
 import static org.neo4j.collection.primitive.PrimitiveLongCollections.single;
 import static org.neo4j.function.Predicates.any;
+import static org.neo4j.function.Predicates.in;
 import static org.neo4j.helpers.collection.Iterators.filter;
 import static org.neo4j.helpers.collection.Iterators.iterator;
 import static org.neo4j.helpers.collection.Iterators.singleOrNull;
@@ -117,8 +118,6 @@ import static org.neo4j.kernel.api.StatementConstants.NO_SUCH_NODE;
 import static org.neo4j.kernel.api.properties.DefinedProperty.NO_SUCH_PROPERTY;
 import static org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor.Filter.GENERAL;
 import static org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor.Filter.UNIQUE;
-import static org.neo4j.kernel.impl.api.state.IndexTxStateUpdater.LabelChangeType.ADDED_LABEL;
-import static org.neo4j.kernel.impl.api.state.IndexTxStateUpdater.LabelChangeType.REMOVED_LABEL;
 import static org.neo4j.kernel.impl.util.Cursors.count;
 import static org.neo4j.kernel.impl.util.Cursors.empty;
 import static org.neo4j.register.Registers.newDoubleLongRegister;
@@ -511,9 +510,7 @@ public class StateHandlingStatementOperations implements
                 return false;
             }
 
-            state.txState().nodeDoAddLabel( labelId, node.id() );
-
-            indexTxStateUpdater.onLabelChange( state, labelId, node, ADDED_LABEL );
+            state.txState().nodeDoAddLabel( state, indexTxStateUpdater, labelId, node.id() );
 
             return true;
         }
@@ -531,9 +528,7 @@ public class StateHandlingStatementOperations implements
                 return false;
             }
 
-            state.txState().nodeDoRemoveLabel( labelId, node.id() );
-
-            indexTxStateUpdater.onLabelChange( state, labelId, node, REMOVED_LABEL );
+            state.txState().nodeDoRemoveLabel( state, indexTxStateUpdater, labelId, node.id() );
 
             return true;
         }
@@ -1057,16 +1052,14 @@ public class StateHandlingStatementOperations implements
 
             if ( existingProperty == NO_SUCH_PROPERTY )
             {
-                state.txState().nodeDoAddProperty( node.id(), property );
-                indexTxStateUpdater.onPropertyAdd( state, node, property );
+                state.txState().nodeDoAddProperty( state, indexTxStateUpdater, node.id(), property );
                 return Property.noProperty( property.propertyKeyId(), EntityType.NODE, node.id() );
             }
             else
             {
                 if ( !property.equals( existingProperty ) )
                 {
-                    state.txState().nodeDoChangeProperty( node.id(), existingProperty, property );
-                    indexTxStateUpdater.onPropertyChange( state, node, existingProperty, property );
+                    state.txState().nodeDoChangeProperty( state, indexTxStateUpdater, node.id(), existingProperty, property );
                 }
                 return existingProperty;
             }
@@ -1139,9 +1132,7 @@ public class StateHandlingStatementOperations implements
                     existingProperty = Property.property( properties.get().propertyKeyId(), properties.get().value() );
 
                     autoIndexing.nodes().propertyRemoved( ops, nodeId, propertyKeyId );
-                    state.txState().nodeDoRemoveProperty( node.id(), existingProperty );
-
-                    indexTxStateUpdater.onPropertyRemove( state, node, existingProperty );
+                    state.txState().nodeDoRemoveProperty( state, indexTxStateUpdater, node.id(), existingProperty );
                 }
             }
 

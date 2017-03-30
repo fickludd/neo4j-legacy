@@ -26,6 +26,8 @@ import org.neo4j.kernel.api.schema_new.OrderedPropertyValues;
 import org.neo4j.kernel.api.schema_new.constaints.ConstraintDescriptor;
 import org.neo4j.kernel.api.schema_new.constaints.IndexBackedConstraintDescriptor;
 import org.neo4j.kernel.api.schema_new.index.NewIndexDescriptor;
+import org.neo4j.kernel.impl.api.KernelStatement;
+import org.neo4j.kernel.impl.api.state.IndexTxStateUpdater;
 import org.neo4j.storageengine.api.txstate.ReadableTransactionState;
 
 /**
@@ -52,7 +54,12 @@ public interface TransactionState extends ReadableTransactionState
 
     void nodeDoAddProperty( long nodeId, DefinedProperty newProperty );
 
+    void nodeDoAddProperty( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, long nodeId, DefinedProperty newProperty );
+
     void nodeDoChangeProperty( long nodeId, DefinedProperty replacedProperty, DefinedProperty newProperty );
+
+    void nodeDoChangeProperty( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, long nodeId,
+            DefinedProperty replacedProperty, DefinedProperty newProperty );
 
     void relationshipDoReplaceProperty( long relationshipId,
                                         Property replacedProperty, DefinedProperty newProperty );
@@ -61,13 +68,20 @@ public interface TransactionState extends ReadableTransactionState
 
     void nodeDoRemoveProperty( long nodeId, DefinedProperty removedProperty );
 
+    void nodeDoRemoveProperty( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, long nodeId,
+            DefinedProperty removedProperty );
+
     void relationshipDoRemoveProperty( long relationshipId, DefinedProperty removedProperty );
 
     void graphDoRemoveProperty( DefinedProperty removedProperty );
 
     void nodeDoAddLabel( int labelId, long nodeId );
 
+    void nodeDoAddLabel( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, int labelId, long nodeId );
+
     void nodeDoRemoveLabel( int labelId, long nodeId );
+
+    void nodeDoRemoveLabel( KernelStatement state, IndexTxStateUpdater indexTxStateUpdater, int labelId, long nodeId );
 
     // TOKEN RELATED
 

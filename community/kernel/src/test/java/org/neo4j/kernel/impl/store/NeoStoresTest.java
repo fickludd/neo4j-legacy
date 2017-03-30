@@ -58,6 +58,7 @@ import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.impl.api.KernelStatement;
 import org.neo4j.kernel.impl.api.KernelTransactionImplementation;
 import org.neo4j.kernel.impl.api.RelationshipVisitor;
+import org.neo4j.kernel.impl.api.state.IndexTxStateUpdater;
 import org.neo4j.kernel.impl.core.RelationshipTypeToken;
 import org.neo4j.kernel.impl.storageengine.impl.recordstorage.RecordStorageEngine;
 import org.neo4j.kernel.impl.store.MetaDataStore.Position;
@@ -99,6 +100,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 import static org.neo4j.function.Predicates.ALWAYS_TRUE_INT;
 import static org.neo4j.graphdb.factory.GraphDatabaseSettings.counts_store_rotation_timeout;
 import static org.neo4j.helpers.collection.MapUtil.stringMap;
@@ -312,11 +314,11 @@ public class NeoStoresTest
 
         if ( oldProperty == NO_SUCH_PROPERTY )
         {
-            transaction.nodeDoAddProperty( nodeId, property );
+            transaction.nodeDoAddProperty( mock( KernelStatement.class ), mock( IndexTxStateUpdater.class ), nodeId, property );
         }
         else
         {
-            transaction.nodeDoChangeProperty( nodeId, oldProperty, property );
+            transaction.nodeDoChangeProperty( mock( KernelStatement.class ), mock( IndexTxStateUpdater.class ), nodeId, oldProperty, property );
         }
         return property;
     }
@@ -499,7 +501,7 @@ public class NeoStoresTest
         initializeStores( storeDir, stringMap() );
         startTx();
         DefinedProperty prop2 = nodeAddProperty( nodeId, prop.propertyKeyId(), 5 );
-        transaction.nodeDoRemoveProperty( nodeId, prop2 );
+        transaction.nodeDoRemoveProperty( mock( KernelStatement.class ), mock( IndexTxStateUpdater.class ), nodeId, prop2 );
         transaction.nodeDoDelete( nodeId );
         commitTx();
         ds.stop();
@@ -1402,7 +1404,7 @@ public class NeoStoresTest
                 assertEquals( "prop3", MyPropertyKeyToken.getIndexFor(
                         keyId ).name() );
                 assertEquals( false, data.value() );
-                transaction.nodeDoRemoveProperty( node, prop3 );
+                transaction.nodeDoRemoveProperty( mock( KernelStatement.class ), mock( IndexTxStateUpdater.class ), node, prop3 );
             }
             else
             {
@@ -1448,7 +1450,7 @@ public class NeoStoresTest
                 assertEquals( "prop3", MyPropertyKeyToken.getIndexFor(
                         keyId ).name() );
                 assertEquals( true, data.value() );
-                transaction.nodeDoRemoveProperty( node, prop3 );
+                transaction.nodeDoRemoveProperty( mock( KernelStatement.class ), mock( IndexTxStateUpdater.class ), node, prop3 );
             }
             else
             {

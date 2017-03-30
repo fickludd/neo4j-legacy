@@ -50,6 +50,7 @@ import org.neo4j.kernel.api.txstate.LegacyIndexTransactionState;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.kernel.api.txstate.TxStateHolder;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
+import org.neo4j.kernel.impl.api.state.LazyTxState;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.factory.AccessCapability;
 import org.neo4j.kernel.impl.locking.ActiveLock;
@@ -375,7 +376,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         if ( txState == null )
         {
             transactionMonitor.upgradeToWriteTransaction();
-            txState = new TxState();
+            txState = new LazyTxState( new TxState() );
         }
         return txState;
     }
@@ -629,7 +630,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
             {
                 try
                 {
-                    txState.accept( new TxStateVisitor.Adapter()
+                    txState.acceptAndDestroy( new TxStateVisitor.Adapter()
                     {
                         @Override
                         public void visitCreatedNode( long id )
