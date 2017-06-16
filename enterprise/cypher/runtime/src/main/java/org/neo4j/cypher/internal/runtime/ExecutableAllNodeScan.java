@@ -1,5 +1,8 @@
 package org.neo4j.cypher.internal.runtime;
 
+import org.neo4j.cypher.internal.runtime.columns.LabelColumn;
+import org.neo4j.cypher.internal.runtime.columns.ReferenceColumn;
+
 public class ExecutableAllNodeScan extends ExecutablePusher
 {
     NodeCursor node;
@@ -11,18 +14,18 @@ public class ExecutableAllNodeScan extends ExecutablePusher
     @Override
     void process( Morsel morsel )
     {
-        long[] nodeIds = morsel.refCol( nodeIdCol );
-        long[] labelIds = morsel.labelsOrRefCol( labelIdCol );
-        long[] edgeGroupRefs = morsel.refCol( edgeGroupRefCol );
-        long[] propertyRefs = morsel.refCol( propertyRefCol );
+        ReferenceColumn nodeIds = morsel.refCol( nodeIdCol );
+        LabelColumn labelIds = morsel.labelsCol( labelIdCol );
+        ReferenceColumn edgeGroupRefs = morsel.refCol( edgeGroupRefCol );
+        ReferenceColumn propertyRefs = morsel.refCol( propertyRefCol );
 
         int i = 0;
         while ( i < morsel.maxSize() && node.next() )
         {
-            nodeIds[i] = node.getId();
-            labelIds[i] = node.labels();
-            edgeGroupRefs[i] = node.edgeGroupReference();
-            propertyRefs[i] = node.propertyReference();
+            nodeIds.setAt( i, node.getId() );
+            labelIds.setAt( i, node.labels() );
+            edgeGroupRefs.setAt( i, node.edgeGroupReference() );
+            propertyRefs.setAt( i, node.propertyReference() );
             i++;
         }
         morsel.setSize( i );

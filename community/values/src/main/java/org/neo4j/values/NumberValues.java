@@ -294,4 +294,43 @@ public class NumberValues
         }
         return x;
     }
+
+    public static boolean gte( Value value, short number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() >= number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() >= number;
+        }
+        return false;
+    }
+
+    public static boolean lt( Value value, short number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() < number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() < number;
+        }
+        return false;
+    }
+
+    public static boolean eq( Value value, short number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() == number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() == number;
+        }
+        return false;
+    }
 }
