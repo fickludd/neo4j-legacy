@@ -44,6 +44,7 @@
         <module>acceptance-spec-suite</module>
         <module>compatibility-spec-suite</module>
         <module>cypher</module>
+        <module>runtime</module>
       </modules>
     </profile>
   </profiles>
