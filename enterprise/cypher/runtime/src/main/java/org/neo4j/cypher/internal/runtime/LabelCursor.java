@@ -1,13 +1,13 @@
 package org.neo4j.cypher.internal.runtime;
 
-public class ReadOps
+public class LabelCursor
 {
-    public void properties( long propertyRef, PropertyCursor property )
+    public boolean next()
     {
         throw new UnsupportedOperationException( "needs love" );
     }
 
-    public void readLabels( long labelRef, LabelCursor labels )
+    public int get()
     {
         throw new UnsupportedOperationException( "needs love" );
     }
