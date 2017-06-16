@@ -4,26 +4,26 @@ public class NodeCursor
 {
     public boolean next()
     {
-        return false;
+        throw new UnsupportedOperationException( "needs love" );
     }
 
     public long getId()
     {
-        return 0;
+        throw new UnsupportedOperationException( "needs love" );
     }
 
     public long labels()
     {
-        return 0;
+        throw new UnsupportedOperationException( "needs love" );
     }
 
     public long edgeGroupReference()
     {
-        return 0;
+        throw new UnsupportedOperationException( "needs love" );
     }
 
     public long propertyReference()
     {
-        return 0;
+        throw new UnsupportedOperationException( "needs love" );
     }
 }

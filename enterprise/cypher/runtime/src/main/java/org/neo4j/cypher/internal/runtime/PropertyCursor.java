@@ -16,5 +16,6 @@ public class PropertyCursor
 
     public void valueTo( ValueSink sink )
     {
+        throw new UnsupportedOperationException( "needs love" );
     }
 }
