@@ -7,61 +7,43 @@ import org.neo4j.values.NumberValues;
 import org.neo4j.values.Value;
 import org.neo4j.values.Values;
 
-public class ShortColumn extends ValueColumn
+public class GenericValueColumn extends ValueColumn
 {
-    final short[] values;
-    final Map<Integer, Value> backup;
+    final Value[] values;
 
-    public ShortColumn( short[] values )
+    public GenericValueColumn( Value[] values )
     {
         this.values = values;
-        backup = new HashMap<>();
     }
 
     @Override
     public void setAt( int offset, short value )
     {
-        values[offset] = value;
+        values[offset] = Values.shortValue( value );
     }
 
     @Override
     public void setAt( int offset, long value )
     {
-        short asShort = (short) value;
-        if ( asShort == value )
-        {
-            values[offset] = asShort;
-        }
-        else
-        {
-            backup.put( offset, Values.longValue( value ) );
-        }
+        values[offset] = Values.longValue( value );
     }
 
     @Override
     public void setAt( int offset, double value )
     {
-        short asShort = (short) value;
-        if ( asShort == value )
-        {
-            values[offset] = asShort;
-        }
-        else
-        {
-            backup.put( offset, Values.doubleValue( value ) );
-        }
+        values[offset] = Values.doubleValue( value );
     }
 
     @Override
     public void setAt( int offset, String value )
     {
-        backup.put( offset, Values.stringValue( value ) );
+        values[offset] = Values.stringValue( value );
     }
 
     @Override
     public void setAt( int offset, Value value )
     {
-        backup.put( offset, value );
+        values[offset] = value;
     }
 
     @Override
@@ -75,7 +57,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] < other[i];
+            result[i] = NumberValues.lt( values[i], other[i] );
         }
     }
 
@@ -84,7 +66,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] < other[i];
+            result[i] = NumberValues.lt( values[i], other[i] );
         }
     }
 
@@ -93,7 +75,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] < other[i];
+            result[i] = NumberValues.lt( values[i], other[i] );
         }
     }
 
@@ -102,7 +84,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = NumberValues.gte( other[i], values[i] );
+            result[i] = Values.VALUE_COMPARATOR.compare( values[i], other[i] ) < 0;
         }
     }
 
@@ -117,7 +99,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] < other[i];
+            result[i] = NumberValues.gte( values[i], other[i] );
         }
     }
 
@@ -126,7 +108,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] < other[i];
+            result[i] = NumberValues.gte( values[i], other[i] );
         }
     }
 
@@ -135,7 +117,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] < other[i];
+            result[i] = NumberValues.gte( values[i], other[i] );
         }
     }
 
@@ -144,7 +126,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = NumberValues.lt( other[i], values[i] );
+            result[i] = Values.VALUE_COMPARATOR.compare( values[i], other[i] ) >= 0;
         }
     }
 
@@ -159,7 +141,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] == other[i];
+            result[i] = NumberValues.eq( values[i], other[i] );
         }
     }
 
@@ -168,7 +150,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] == other[i];
+            result[i] = NumberValues.eq( values[i], other[i] );
         }
     }
 
@@ -177,7 +159,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] == other[i];
+            result[i] = NumberValues.eq( values[i], other[i] );
         }
     }
 
@@ -186,7 +168,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = false;
+            result[i] = values[i].equals( other[i] );
         }
     }
 
@@ -195,25 +177,27 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = NumberValues.eq( other[i], values[i] );
+            result[i] = values[i].equals( other[i] );
         }
     }
 
     @Override
     public void eq( long number, boolean[] result )
     {
+        Value numberValue = Values.longValue( number );
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] == number;
+            result[i] = values[i].equals( numberValue );
         }
     }
 
     @Override
     public void eq( double number, boolean[] result )
     {
+        Value numberValue = Values.doubleValue( number );
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] == number;
+            result[i] = values[i].equals( numberValue );
         }
     }
 
@@ -222,7 +206,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = false;
+            result[i] = values[i].equals( string );
         }
     }
 
@@ -231,7 +215,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = NumberValues.eq( value, values[i] );
+            result[i] = values[i].equals( value );
         }
     }
 
@@ -240,7 +224,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] < number;
+            result[i] = NumberValues.lt( values[i], number );
         }
     }
 
@@ -249,7 +233,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] < number;
+            result[i] = NumberValues.lt( values[i], number );
         }
     }
 
@@ -258,7 +242,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] >= number;
+            result[i] = NumberValues.gte( values[i], number );
         }
     }
 
@@ -267,7 +251,7 @@ public class ShortColumn extends ValueColumn
     {
         for ( int i = 0; i < values.length; i++ )
         {
-            result[i] = values[i] >= number;
+            result[i] = NumberValues.gte( values[i], number );
         }
     }
 }
