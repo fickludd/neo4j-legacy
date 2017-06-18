@@ -4,19 +4,21 @@ import java.util.Set;
 
 import org.neo4j.cypher.internal.runtime.ColumnId;
 import org.neo4j.cypher.internal.runtime.Morsel;
-import org.neo4j.cypher.internal.runtime.PropertyCursor;
-import org.neo4j.cypher.internal.runtime.ReadOps;
 import org.neo4j.cypher.internal.runtime.columns.ReferenceColumn;
-import org.neo4j.cypher.internal.runtime.columns.ValueColumn;
 
 public class ExecutableHashBuilder extends ExecutablePusher
 {
-    ReadOps readOps;
     ColumnId nodeIdCol;
     Set<Long> nodeIdSet; // I know it does work like this...
 
+    public ExecutableHashBuilder( ColumnId nodeIdCol, Set<Long> nodeIdSet )
+    {
+        this.nodeIdCol = nodeIdCol;
+        this.nodeIdSet = nodeIdSet;
+    }
+
     @Override
-    void process( Morsel morsel )
+    public void process( Morsel morsel )
     {
         ReferenceColumn nodeRefs = morsel.refCol( nodeIdCol );
 

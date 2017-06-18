@@ -11,7 +11,7 @@ public class FlagColumn
 
     public boolean[] array()
     {
-        return new boolean[0];
+        return values;
     }
 
     public void and( boolean[] other, boolean[] result )

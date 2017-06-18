@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 import org.neo4j.cypher.internal.runtime.ColumnId;
 import org.neo4j.cypher.internal.runtime.Morsel;
-import org.neo4j.cypher.internal.runtime.PropertyCursor;
-import org.neo4j.cypher.internal.runtime.ReadOps;
+import org.neo4j.cypher.internal.runtime.kernel.PropertyCursor;
+import org.neo4j.cypher.internal.runtime.kernel.ReadOps;
 import org.neo4j.cypher.internal.runtime.columns.ReferenceColumn;
 import org.neo4j.cypher.internal.runtime.columns.ValueColumn;
 
@@ -17,8 +17,18 @@ public class ExecutableNPropertyLoad extends ExecutablePusher
     ColumnId[] propertyColIds;
     ColumnId propertyRefCol;
 
+    public ExecutableNPropertyLoad( ReadOps readOps, PropertyCursor property, int[] propertyKeyIds,
+            ColumnId[] propertyColIds, ColumnId propertyRefCol )
+    {
+        this.readOps = readOps;
+        this.property = property;
+        this.propertyKeyIds = propertyKeyIds;
+        this.propertyColIds = propertyColIds;
+        this.propertyRefCol = propertyRefCol;
+    }
+
     @Override
-    void process( Morsel morsel )
+    public void process( Morsel morsel )
     {
         ReferenceColumn propertyRefs = morsel.refCol( propertyRefCol );
         ValueColumn[] valueColumns = morsel.columns( propertyColIds );

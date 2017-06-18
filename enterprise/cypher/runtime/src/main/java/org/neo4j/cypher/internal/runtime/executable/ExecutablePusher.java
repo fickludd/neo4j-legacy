@@ -2,9 +2,9 @@ package org.neo4j.cypher.internal.runtime.executable;
 
 import org.neo4j.cypher.internal.runtime.Morsel;
 
-abstract class ExecutablePusher
+public abstract class ExecutablePusher
 {
-    ExecutablePusher next;
+    public ExecutablePusher next;
 
-    abstract void process( Morsel input );
+    public abstract void process( Morsel input );
 }

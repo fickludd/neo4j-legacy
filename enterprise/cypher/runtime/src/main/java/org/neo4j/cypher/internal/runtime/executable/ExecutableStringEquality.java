@@ -10,8 +10,14 @@ public class ExecutableStringEquality extends ExecutablePusher
     String predicate;
     ColumnId propertyColId;
 
+    public ExecutableStringEquality( String predicate, ColumnId propertyColId )
+    {
+        this.predicate = predicate;
+        this.propertyColId = propertyColId;
+    }
+
     @Override
-    void process( Morsel morsel )
+    public void process( Morsel morsel )
     {
         ValueColumn propertyCol = morsel.column( propertyColId );
         FlagColumn result = morsel.tempFlagColumn();

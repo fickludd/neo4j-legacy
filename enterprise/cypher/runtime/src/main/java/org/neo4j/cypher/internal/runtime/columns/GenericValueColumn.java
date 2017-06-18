@@ -1,8 +1,5 @@
 package org.neo4j.cypher.internal.runtime.columns;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.neo4j.values.NumberValues;
 import org.neo4j.values.Value;
 import org.neo4j.values.Values;

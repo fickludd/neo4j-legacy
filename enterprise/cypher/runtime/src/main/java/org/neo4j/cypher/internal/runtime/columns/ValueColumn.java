@@ -1,10 +1,10 @@
 package org.neo4j.cypher.internal.runtime.columns;
 
-import org.neo4j.cypher.internal.runtime.PropertyCursor;
-import org.neo4j.cypher.internal.runtime.ValueSink;
+import org.neo4j.cypher.internal.runtime.kernel.PropertyCursor;
+import org.neo4j.cypher.internal.runtime.kernel.ValueSink;
 import org.neo4j.values.Value;
 
-public abstract class ValueColumn extends ValueSink
+public abstract class ValueColumn implements ValueSink
 {
     public abstract void setAt( int offset, short value );
     public abstract void setAt( int offset, long value );
