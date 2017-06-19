@@ -3,18 +3,21 @@ package org.neo4j.cypher.internal.runtime.columns;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.neo4j.cypher.internal.runtime.BufferController;
 import org.neo4j.values.NumberValues;
 import org.neo4j.values.Value;
 import org.neo4j.values.Values;
 
 public class ShortColumn extends ValueColumn
 {
+    final BufferController bufferController;
     final short[] values;
     final Map<Integer, Value> backup;
 
-    public ShortColumn( short[] values )
+    public ShortColumn( BufferController bufferController )
     {
-        this.values = values;
+        this.bufferController = bufferController;
+        this.values = new short[bufferController.maxSize()];
         backup = new HashMap<>();
     }
 

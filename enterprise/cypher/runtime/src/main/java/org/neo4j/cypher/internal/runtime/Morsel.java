@@ -9,12 +9,9 @@ import org.neo4j.cypher.internal.runtime.columns.GenericValueColumn;
 import org.neo4j.cypher.internal.runtime.columns.LabelColumn;
 import org.neo4j.cypher.internal.runtime.columns.ReferenceColumn;
 import org.neo4j.cypher.internal.runtime.columns.ValueColumn;
-import org.neo4j.values.Value;
 
-public class Morsel
+public class Morsel extends BufferController
 {
-    private int size;
-    private final int maxSize;
     private final FlagColumn inUse;
     private final FlagColumn tempFlag;
     private final Map<ColumnId, ReferenceColumn> refCols;
@@ -23,27 +20,12 @@ public class Morsel
 
     public Morsel( int maxSize )
     {
-        this.maxSize = maxSize;
-        inUse = new FlagColumn( new boolean[maxSize] );
-        tempFlag = new FlagColumn( new boolean[maxSize] );
+        super( maxSize );
+        inUse = new FlagColumn( this );
+        tempFlag = new FlagColumn( this );
         refCols = new HashMap<>();
         valueCols = new HashMap<>();
         labelCols = new HashMap<>();
-    }
-
-    public int maxSize()
-    {
-        return maxSize;
-    }
-
-    public void setSize( int size )
-    {
-        this.size = size;
-    }
-
-    public int size()
-    {
-        return size;
     }
 
     public FlagColumn inUse()
@@ -54,7 +36,7 @@ public class Morsel
     public ValueColumn column( ColumnId propertyCol )
     {
         return valueCols.computeIfAbsent( propertyCol,
-                x -> new GenericValueColumn( new Value[maxSize] ) );
+                x -> new GenericValueColumn( this ) );
     }
 
     public FlagColumn tempFlagColumn()
@@ -65,13 +47,13 @@ public class Morsel
     public ReferenceColumn refCol( ColumnId nodeIdCol )
     {
         return refCols.computeIfAbsent( nodeIdCol,
-                x -> new ReferenceColumn( new long[maxSize] ) );
+                x -> new ReferenceColumn( this ) );
     }
 
     public LabelColumn labelsCol( ColumnId labelIdCol )
     {
         return labelCols.computeIfAbsent( labelIdCol,
-                x -> new LabelColumn( new long[maxSize] ) );
+                x -> new LabelColumn( this ) );
     }
 
     public ValueColumn[] columns( ColumnId[] propertyColIds )

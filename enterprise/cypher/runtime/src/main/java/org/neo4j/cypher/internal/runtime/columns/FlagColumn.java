@@ -1,12 +1,16 @@
 package org.neo4j.cypher.internal.runtime.columns;
 
+import org.neo4j.cypher.internal.runtime.BufferController;
+
 public class FlagColumn
 {
     final boolean[] values;
+    final BufferController bufferController;
 
-    public FlagColumn( boolean[] values )
+    public FlagColumn( BufferController bufferController )
     {
-        this.values = values;
+        this.values = new boolean[bufferController.maxSize()];
+        this.bufferController = bufferController;
     }
 
     public boolean[] array()

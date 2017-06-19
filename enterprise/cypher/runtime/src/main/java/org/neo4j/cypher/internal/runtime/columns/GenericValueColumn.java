@@ -1,5 +1,6 @@
 package org.neo4j.cypher.internal.runtime.columns;
 
+import org.neo4j.cypher.internal.runtime.BufferController;
 import org.neo4j.values.NumberValues;
 import org.neo4j.values.Value;
 import org.neo4j.values.Values;
@@ -7,10 +8,12 @@ import org.neo4j.values.Values;
 public class GenericValueColumn extends ValueColumn
 {
     final Value[] values;
+    final BufferController bufferController;
 
-    public GenericValueColumn( Value[] values )
+    public GenericValueColumn(BufferController bufferController )
     {
-        this.values = values;
+        this.values = new Value[bufferController.maxSize()];
+        this.bufferController = bufferController;
     }
 
     @Override

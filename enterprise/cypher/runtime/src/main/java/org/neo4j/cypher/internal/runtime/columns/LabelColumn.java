@@ -1,15 +1,18 @@
 package org.neo4j.cypher.internal.runtime.columns;
 
+import org.neo4j.cypher.internal.runtime.BufferController;
 import org.neo4j.cypher.internal.runtime.kernel.LabelCursor;
 import org.neo4j.cypher.internal.runtime.kernel.ReadOps;
 
 public class LabelColumn
 {
     final long[] references;
+    final BufferController bufferController;
 
-    public LabelColumn( long[] references )
+    public LabelColumn( BufferController bufferController )
     {
-        this.references = references;
+        this.references = new long[bufferController.maxSize()];
+        this.bufferController = bufferController;
     }
 
     public void setAt( int offset, long reference )
