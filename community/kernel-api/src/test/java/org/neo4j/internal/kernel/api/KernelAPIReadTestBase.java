@@ -48,7 +48,7 @@ public abstract class KernelAPIReadTestBase<G extends KernelAPIReadTestSupport>
      *
      * @param graphDb a graph API which should be used to build the test graph
      */
-    abstract void createTestGraph( GraphDatabaseService graphDb );
+    protected abstract void createTestGraph( GraphDatabaseService graphDb );
 
     @Before
     public void setupGraph() throws IOException

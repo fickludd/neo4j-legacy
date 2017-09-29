@@ -44,7 +44,7 @@ public abstract class RelationshipScanCursorTestBase<G extends KernelAPIReadTest
     private static long none, loop, one, c, d;
 
     @Override
-    void createTestGraph( GraphDatabaseService graphDb )
+    protected void createTestGraph( GraphDatabaseService graphDb )
     {
         Relationship deleted;
         try ( Transaction tx = graphDb.beginTx() )

@@ -24,6 +24,7 @@
   <modules>
     <module>cursors</module>
     <module>neole</module>
+    <module>runtime</module>
   </modules>
 
   <scm>

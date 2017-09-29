@@ -40,7 +40,7 @@ public abstract class LargeNodeCursorTestBase<G extends KernelAPIReadTestSupport
 
     private static Random random = new Random( 2 );
 
-    void createTestGraph( GraphDatabaseService graphDb )
+    protected void createTestGraph( GraphDatabaseService graphDb )
     {
         List<Node> deleted = new ArrayList<>();
         try ( Transaction tx = graphDb.beginTx() )

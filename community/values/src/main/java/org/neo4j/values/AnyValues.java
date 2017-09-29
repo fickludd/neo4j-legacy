@@ -21,6 +21,9 @@ package org.neo4j.values;
 
 import java.util.Comparator;
 
+import org.neo4j.values.storable.FloatingPointValue;
+import org.neo4j.values.storable.IntegralValue;
+import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 import org.neo4j.values.virtual.VirtualValueGroup;
 
@@ -69,4 +72,86 @@ public final class AnyValues
      */
     public static final Comparator<AnyValue> COMPARATOR =
             new AnyValueComparator( Values.COMPARATOR, VirtualValueGroup::compareTo );
+
+    /*
+        Direct comparators
+     */
+
+    public static boolean gte( AnyValue value, long number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() >= number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() >= number;
+        }
+        return false;
+    }
+
+    public static boolean lt( AnyValue value, long number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() < number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() < number;
+        }
+        return false;
+    }
+
+    public static boolean eq( AnyValue value, long number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() == number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() == number;
+        }
+        return false;
+    }
+
+    public static boolean gte( AnyValue value, double number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() >= number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() >= number;
+        }
+        return false;
+    }
+
+    public static boolean lt( AnyValue value, double number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() < number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() < number;
+        }
+        return false;
+    }
+
+    public static boolean eq( AnyValue value, double number )
+    {
+        if ( value instanceof FloatingPointValue )
+        {
+            return ((FloatingPointValue)value).doubleValue() == number;
+        }
+        if ( value instanceof IntegralValue )
+        {
+            return ((IntegralValue)value).longValue() == number;
+        }
+        return false;
+    }
 }

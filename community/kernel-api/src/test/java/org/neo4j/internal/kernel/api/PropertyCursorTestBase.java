@@ -82,7 +82,7 @@ public abstract class PropertyCursorTestBase<G extends KernelAPIReadTestSupport>
     private static String chinese = "造Unicode之";
 
     @Override
-    void createTestGraph( GraphDatabaseService graphDb )
+    protected void createTestGraph( GraphDatabaseService graphDb )
     {
         try ( Transaction tx = graphDb.beginTx() )
         {

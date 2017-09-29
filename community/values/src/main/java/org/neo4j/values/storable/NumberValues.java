@@ -22,6 +22,8 @@ package org.neo4j.values.storable;
 import java.math.BigDecimal;
 import java.util.Arrays;
 
+import org.neo4j.values.AnyValue;
+
 /**
  * Static methods for computing the hashCode of primitive numbers and arrays of primitive numbers.
  * <p>

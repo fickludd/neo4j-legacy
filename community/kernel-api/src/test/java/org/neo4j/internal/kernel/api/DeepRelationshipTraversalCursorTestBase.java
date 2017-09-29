@@ -42,7 +42,7 @@ public abstract class DeepRelationshipTraversalCursorTestBase<G extends KernelAP
     private RelationshipType PARENT = withName( "PARENT" );
 
     @Override
-    void createTestGraph( GraphDatabaseService graphDb )
+    protected void createTestGraph( GraphDatabaseService graphDb )
     {
         try ( Transaction tx = graphDb.beginTx() )
         {

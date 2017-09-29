@@ -29,7 +29,7 @@ import org.neo4j.internal.kernel.api.KernelAPIReadTestSupport;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.test.TestGraphDatabaseFactory;
 
-class ReadTestSupport implements KernelAPIReadTestSupport
+public class ReadTestSupport implements KernelAPIReadTestSupport
 {
     private GraphDatabaseService db;
 

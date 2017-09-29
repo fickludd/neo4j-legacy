@@ -44,7 +44,7 @@ public abstract class RelationshipTraversalCursorTestBase<G extends KernelAPIRea
     private static int FOO, BAR, BAZ;
 
     @Override
-    void createTestGraph( GraphDatabaseService graphDb )
+    protected void createTestGraph( GraphDatabaseService graphDb )
     {
         Relationship dead;
         try ( Transaction tx = graphDb.beginTx() )
