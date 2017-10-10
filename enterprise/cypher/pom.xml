@@ -41,6 +41,7 @@
         <module>compatibility-spec-suite</module>
         <module>physical-planning</module>
         <module>slotted-runtime</module>
+        <module>parallel-runtime</module>
         <module>cypher</module>
       </modules>
     </profile>
