@@ -84,7 +84,7 @@ trait Compatibility[CONTEXT <: CommunityRuntimeContext,
 
   def createExecPlan: Transformer[CONTEXT, LogicalPlanState, CompilationState] = {
     ProcedureCallOrSchemaCommandExecutionPlanBuilder andThen
-      If((s: CompilationState) => s.maybeExecutionPlan.isEmpty)(
+      If((s: CompilationState) => s.maybeExecutionPlan.isFailure)(
         runtimeBuilder.create(maybeRuntimeName, config.useErrorsOverWarnings).adds(CompilationContains[ExecutionPlan_v3_4])
       )
   }
