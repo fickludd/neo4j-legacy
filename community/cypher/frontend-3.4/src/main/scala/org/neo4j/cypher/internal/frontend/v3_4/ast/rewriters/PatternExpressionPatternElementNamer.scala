@@ -22,27 +22,27 @@ import org.neo4j.cypher.internal.v3_4.expressions._
 
 object PatternExpressionPatternElementNamer {
 
-  def apply(expr: PatternExpression): (PatternExpression, Map[PatternElement, Variable]) = {
+  def apply(expr: PatternExpression): (PatternExpression, Map[PatternElement, VarAmbiguous]) = {
     val unnamedMap = nameUnnamedPatternElements(expr.pattern)
     val namedPattern = expr.pattern.endoRewrite(namePatternElementsFromMap(unnamedMap))
     val namedExpr = expr.copy(pattern = namedPattern)
     (namedExpr, unnamedMap)
   }
 
-  def apply(expr: PatternComprehension): (PatternComprehension, Map[PatternElement, Variable]) = {
+  def apply(expr: PatternComprehension): (PatternComprehension, Map[PatternElement, VarAmbiguous]) = {
     val unnamedMap = nameUnnamedPatternElements(expr.pattern)
     val namedPattern = expr.pattern.endoRewrite(namePatternElementsFromMap(unnamedMap))
     val namedExpr = expr.copy(pattern = namedPattern)(expr.position)
     (namedExpr, unnamedMap)
   }
 
-  private def nameUnnamedPatternElements(pattern: RelationshipsPattern): Map[PatternElement, Variable] = {
+  private def nameUnnamedPatternElements(pattern: RelationshipsPattern): Map[PatternElement, VarAmbiguous] = {
     val unnamedElements = findPatternElements(pattern).filter(_.variable.isEmpty)
     IdentityMap(unnamedElements.map {
       case elem: NodePattern =>
-        elem -> Variable(UnNamedNameGenerator.name(elem.position.bumped()))(elem.position)
+        elem -> VarAmbiguous(UnNamedNameGenerator.name(elem.position.bumped()))(elem.position)
       case elem@RelationshipChain(_, relPattern, _) =>
-        elem -> Variable(UnNamedNameGenerator.name(relPattern.position.bumped()))(relPattern.position)
+        elem -> VarAmbiguous(UnNamedNameGenerator.name(relPattern.position.bumped()))(relPattern.position)
     }: _*)
   }
 
@@ -56,7 +56,7 @@ object PatternExpressionPatternElementNamer {
     }
   }
 
-  private case class namePatternElementsFromMap(map: Map[PatternElement, Variable]) extends Rewriter {
+  private case class namePatternElementsFromMap(map: Map[PatternElement, VarAmbiguous]) extends Rewriter {
     override def apply(that: AnyRef): AnyRef = instance.apply(that)
 
     private val instance: Rewriter = topDown(Rewriter.lift {

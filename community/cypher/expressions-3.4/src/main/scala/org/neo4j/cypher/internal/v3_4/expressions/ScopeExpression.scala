@@ -28,17 +28,17 @@ import org.neo4j.cypher.internal.util.v3_4.InputPosition
 // - or child expressions in a scope where those variables are bound
 //
 trait ScopeExpression extends Expression {
-  def introducedVariables: Set[LogicalVariable]
+  def introducedVariables: Set[VarLike]
 }
 
-case class FilterScope(variable: LogicalVariable, innerPredicate: Option[Expression])(val position: InputPosition) extends ScopeExpression {
-  val introducedVariables = Set(variable)
+case class FilterScope(variable: VarDeclare, innerPredicate: Option[Expression])(val position: InputPosition) extends ScopeExpression {
+  val introducedVariables: Set[VarLike] = Set(variable)
 }
 
-case class ExtractScope(variable: LogicalVariable, innerPredicate: Option[Expression], extractExpression: Option[Expression])(val position: InputPosition) extends ScopeExpression {
-  val introducedVariables = Set(variable)
+case class ExtractScope(variable: VarDeclare, innerPredicate: Option[Expression], extractExpression: Option[Expression])(val position: InputPosition) extends ScopeExpression {
+  val introducedVariables: Set[VarLike] = Set(variable)
 }
 
-case class ReduceScope(accumulator: LogicalVariable, variable: LogicalVariable, expression: Expression)(val position: InputPosition) extends ScopeExpression {
-  val introducedVariables = Set(accumulator, variable)
+case class ReduceScope(accumulator: VarDeclare, variable: VarDeclare, expression: Expression)(val position: InputPosition) extends ScopeExpression {
+  val introducedVariables: Set[VarLike] = Set(accumulator, variable)
 }

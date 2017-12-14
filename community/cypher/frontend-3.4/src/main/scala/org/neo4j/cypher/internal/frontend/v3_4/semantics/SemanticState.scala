@@ -23,7 +23,7 @@ import org.neo4j.cypher.internal.frontend.v3_4.ast.ASTAnnotationMap
 import org.neo4j.cypher.internal.frontend.v3_4.helpers.{TreeElem, TreeZipper}
 import org.neo4j.cypher.internal.frontend.v3_4.notification.InternalNotification
 import org.neo4j.cypher.internal.frontend.v3_4.semantics.SemanticState.ScopeLocation
-import org.neo4j.cypher.internal.v3_4.expressions.{Expression, LogicalVariable, Variable}
+import org.neo4j.cypher.internal.v3_4.expressions._
 
 import scala.collection.immutable.HashMap
 import scala.language.postfixOps
@@ -33,7 +33,7 @@ object SymbolUse {
 }
 
 // A symbol use represents the occurrence of a symbol at a position
-final case class SymbolUse(name: String, position: InputPosition) {
+final case class SymbolUse(name: String, position: InputPosition) extends VarLike {
   override def toString = s"SymbolUse($nameWithPosition)"
 
   def asVariable: Variable = Variable(name)(position)
@@ -360,7 +360,7 @@ case class SemanticState(currentScope: ScopeLocation,
     Right(copy(currentScope = newScope))
   }
 
-  def localMarkAsGenerated(variable: Variable): Either[SemanticError, SemanticState] =
+  def localMarkAsGenerated(variable: VarLike): Either[SemanticError, SemanticState] =
     currentScope.localSymbol(variable.name) match {
       case None =>
         Left(SemanticError(s"`${variable.name}` cannot be marked as generated - it has not been declared in the local scope", variable.position))
@@ -368,7 +368,7 @@ case class SemanticState(currentScope: ScopeLocation,
         Right(copy(currentScope = currentScope.localMarkAsGenerated(symbol.name)))
     }
 
-  def declareGraph(variable: Variable, positions: Set[InputPosition] = Set.empty): Either[SemanticError, SemanticState] =
+  def declareGraph(variable: VarLike, positions: Set[InputPosition] = Set.empty): Either[SemanticError, SemanticState] =
     currentScope.localSymbol(variable.name) match {
       case None =>
         Right(updateGraph(variable, positions + variable.position))
@@ -378,7 +378,7 @@ case class SemanticState(currentScope: ScopeLocation,
         Left(SemanticError(s"`${variable.name}` already declared as variable", variable.position, symbol.positions.toSeq: _*))
     }
 
-  def declareVariable(variable: LogicalVariable, possibleTypes: TypeSpec, positions: Set[InputPosition] = Set.empty): Either[SemanticError, SemanticState] =
+  def declareVariable(variable: VarLike, possibleTypes: TypeSpec, positions: Set[InputPosition] = Set.empty): Either[SemanticError, SemanticState] =
     currentScope.localSymbol(variable.name) match {
       case None =>
         Right(updateVariable(variable, possibleTypes, positions + variable.position))
@@ -394,11 +394,11 @@ case class SemanticState(currentScope: ScopeLocation,
   def implicitContextGraph(variable: Option[String], position: InputPosition, contextGraphName: String)
   : Either[SemanticError, SemanticState] =
     variable match {
-      case Some(name) => implicitGraph(Variable(name)(position))
+      case Some(name) => implicitGraph(VarDeclare(name)(position))
       case None => Left(SemanticError(s"No $contextGraphName in scope", position))
     }
 
-  def implicitGraph(variable: Variable): Either[SemanticError, SemanticState] =
+  def implicitGraph(variable: VarLike): Either[SemanticError, SemanticState] =
     this.symbol(variable.name) match {
       case None =>
         Right(updateGraph(variable, Set(variable.position)))
@@ -408,7 +408,7 @@ case class SemanticState(currentScope: ScopeLocation,
         Left(SemanticError(s"`${variable.name}` already declared as variable", variable.position, symbol.positions.toSeq: _*))
     }
 
-  def implicitVariable(variable: LogicalVariable, possibleTypes: TypeSpec): Either[SemanticError, SemanticState] =
+  def implicitVariable(variable: VarLike, possibleTypes: TypeSpec): Either[SemanticError, SemanticState] =
     this.symbol(variable.name) match {
       case None =>
         Right(updateVariable(variable, possibleTypes, Set(variable.position)))
@@ -427,7 +427,7 @@ case class SemanticState(currentScope: ScopeLocation,
         }
     }
 
-  def ensureVariableDefined(variable: LogicalVariable): Either[SemanticError, SemanticState] =
+  def ensureVariableDefined(variable: VarLike): Either[SemanticError, SemanticState] =
     this.symbol(variable.name) match {
       case None  =>
         Left(SemanticError(s"Variable `${variable.name}` not defined", variable.position))
@@ -437,7 +437,7 @@ case class SemanticState(currentScope: ScopeLocation,
         Right(updateVariable(variable, symbol.types, symbol.positions + variable.position))
     }
 
-  def ensureGraphDefined(variable: Variable): Either[SemanticError, SemanticState] =
+  def ensureGraphDefined(variable: VarLike): Either[SemanticError, SemanticState] =
     this.symbol(variable.name) match {
       case None if initialWith =>
         Right(updateGraph(variable, Set(variable.position)))
@@ -451,7 +451,7 @@ case class SemanticState(currentScope: ScopeLocation,
 
   def specifyType(expression: Expression, possibleTypes: TypeSpec): Either[SemanticError, SemanticState] =
     expression match {
-      case variable: Variable =>
+      case variable: VarLike =>
         implicitVariable(variable, possibleTypes)
       case _                          =>
         Right(copy(typeTable = typeTable.updated(expression, ExpressionTypeInfo(possibleTypes))))
@@ -468,16 +468,16 @@ case class SemanticState(currentScope: ScopeLocation,
 
   def expressionType(expression: Expression): ExpressionTypeInfo = typeTable.getOrElse(expression, ExpressionTypeInfo(TypeSpec.all))
 
-  private def updateGraph(variable: LogicalVariable, locations: Set[InputPosition], generated: Boolean = false) =
+  private def updateGraph(variable: VarLike, locations: Set[InputPosition], generated: Boolean = false) =
     copy(
       currentScope = currentScope.updateGraph(variable.name, locations, generated),
-      typeTable = typeTable.updated(variable, ExpressionTypeInfo(CTGraphRef))
+      typeTable = typeTable.updated(VarLoad(variable.name)(variable.position), ExpressionTypeInfo(CTGraphRef))
     )
 
-  private def updateVariable(variable: LogicalVariable, types: TypeSpec, locations: Set[InputPosition]) =
+  private def updateVariable(variable: VarLike, types: TypeSpec, locations: Set[InputPosition]) =
     copy(
       currentScope = currentScope.updateVariable(variable.name, types, locations),
-      typeTable = typeTable.updated(variable, ExpressionTypeInfo(types))
+      typeTable = typeTable.updated(VarLoad(variable.name)(variable.position), ExpressionTypeInfo(types))
     )
 
   def recordCurrentScope(astNode: ASTNode): SemanticState =

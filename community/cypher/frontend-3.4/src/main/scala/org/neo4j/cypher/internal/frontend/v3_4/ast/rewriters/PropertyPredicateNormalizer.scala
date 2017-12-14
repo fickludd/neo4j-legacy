@@ -41,24 +41,26 @@ object PropertyPredicateNormalizer extends MatchPredicateNormalizer {
     case _            => false
   }
 
-  private def propertyPredicates(id: LogicalVariable, props: Expression): IndexedSeq[Expression] = props match {
+  private def propertyPredicates(id: VarLike, props: Expression): IndexedSeq[Expression] = props match {
     case mapProps: MapExpression =>
       mapProps.items.map {
         // MATCH (a {a: 1, b: 2}) => MATCH (a) WHERE a.a = 1 AND a.b = 2
-        case (propId, expression) => Equals(Property(id.copyId, propId)(mapProps.position), expression)(mapProps.position)
+        case (propId, expression) =>
+          Equals(Property(VarLoad.of(id), propId)(mapProps.position), expression)(mapProps.position)
+
       }.toIndexedSeq
     case expr: Expression =>
-      Vector(Equals(id.copyId, expr)(expr.position))
+      Vector(Equals(VarLoad.of(id), expr)(expr.position))
     case _ =>
       Vector.empty
   }
 
-  private def varLengthPropertyPredicates(id: LogicalVariable, props: Expression, patternPosition: InputPosition): Expression = {
+  private def varLengthPropertyPredicates(id: VarLike, props: Expression, patternPosition: InputPosition): Expression = {
     val idName = FreshIdNameGenerator.name(patternPosition)
-    val newId = Variable(idName)(id.position)
+    val newId = VarDeclare(idName)(id.position)
     val expressions = propertyPredicates(newId, props)
     val conjunction = conjunct(expressions)
-    AllIterablePredicate(newId, id.copyId, Some(conjunction))(props.position)
+    AllIterablePredicate(newId, VarLoad.of(id), Some(conjunction))(props.position)
   }
 
   private def conjunct(exprs: Seq[Expression]): Expression = exprs match {

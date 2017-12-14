@@ -18,7 +18,7 @@ package org.neo4j.cypher.internal.frontend.v3_4.ast.rewriters
 
 import org.neo4j.cypher.internal.util.v3_4._
 import org.neo4j.cypher.internal.frontend.v3_4.ast._
-import org.neo4j.cypher.internal.v3_4.expressions.{Expression, LogicalVariable, Variable}
+import org.neo4j.cypher.internal.v3_4.expressions.{Expression, LogicalVariable, VarDeclare, Variable}
 
 /**
  * This rewriter normalizes the scoping structure of a query, ensuring it is able to
@@ -60,7 +60,8 @@ case class normalizeWithClauses(mkException: (String, InputPosition) => CypherEx
       clause.verifyOrderByAggregationUse((s,i) => throw mkException(s,i))
       val (unaliasedReturnItems, aliasedReturnItems) = partitionReturnItems(ri.items)
       val initialReturnItems = unaliasedReturnItems ++ aliasedReturnItems
-      val (introducedReturnItems, updatedOrderBy, updatedWhere) = aliasOrderByAndWhere(aliasedReturnItems.map(i => i.expression -> i.alias.get.copyId).toMap, orderBy, where)
+      val (introducedReturnItems, updatedOrderBy, updatedWhere) = aliasOrderByAndWhere(aliasedReturnItems.map(i => i
+        .expression -> i.alias.get.declare).toMap, orderBy, where)
       val requiredVariablesForOrderBy = updatedOrderBy.map(_.dependencies).getOrElse(Set.empty) diff (introducedReturnItems.map(_.variable).toSet ++ initialReturnItems.flatMap(_.alias))
 
       if (orderBy == updatedOrderBy && where == updatedWhere) {
@@ -73,9 +74,9 @@ case class normalizeWithClauses(mkException: (String, InputPosition) => CypherEx
         } else {
 
           initialReturnItems.map(item =>
-            item.alias.fold(item)(alias => AliasedReturnItem(alias.copyId, alias.copyId)(item.position))
+            item.alias.fold(item)(alias => AliasedReturnItem(alias.load, alias.declare)(item.position))
           ) ++
-            requiredVariablesForOrderBy.toIndexedSeq.map(i => AliasedReturnItem(i.copyId, i.copyId)(i.position)) ++
+            requiredVariablesForOrderBy.toIndexedSeq.map(i => AliasedReturnItem(i.load, i.declare)(i.position)) ++
             introducedReturnItems
         }
 
@@ -86,10 +87,10 @@ case class normalizeWithClauses(mkException: (String, InputPosition) => CypherEx
             .flatMap(_.alias).toSet
           val requiredVariables = requiredReturnItems ++ requiredVariablesForOrderBy
 
-          requiredVariables.toIndexedSeq.map(i => AliasedReturnItem(i.copyId, i.copyId)(i.position)) ++ initialReturnItems
+          requiredVariables.toIndexedSeq.map(i => AliasedReturnItem(i.load, i.declare)(i.position)) ++ initialReturnItems
         }
 
-        val introducedVariables = introducedReturnItems.map(_.variable.copyId)
+        val introducedVariables = introducedReturnItems.map(_.variable.declare)
 
         Seq(
           With(distinct = distinct, returnItems = ri.copy(items = firstProjection)(ri.position), mandatoryGraphReturnItems = gri,
@@ -111,7 +112,7 @@ case class normalizeWithClauses(mkException: (String, InputPosition) => CypherEx
           (unaliasedItems, aliasedItems :+ i)
 
         case i if i.alias.isDefined =>
-          (unaliasedItems, aliasedItems :+ AliasedReturnItem(item.expression, item.alias.get.copyId)(item.position))
+          (unaliasedItems, aliasedItems :+ AliasedReturnItem(item.expression, item.alias.get.declare)(item.position))
 
         case _ =>
           // Unaliased return items in WITH will be preserved so that semantic check can report them as an error
@@ -119,7 +120,8 @@ case class normalizeWithClauses(mkException: (String, InputPosition) => CypherEx
       }
     }
 
-  private def aliasOrderByAndWhere(existingAliases: Map[Expression, LogicalVariable], orderBy: Option[OrderBy], where: Option[Where]): (Seq[AliasedReturnItem], Option[OrderBy], Option[Where]) = {
+  private def aliasOrderByAndWhere(existingAliases: Map[Expression, VarDeclare], orderBy: Option[OrderBy], where:
+  Option[Where]): (Seq[AliasedReturnItem], Option[OrderBy], Option[Where]) = {
     val (additionalReturnItemsForOrderBy, updatedOrderBy) = orderBy match {
       case Some(o) =>
         val (returnItems, updatedOrderBy) = aliasOrderBy(existingAliases, o)
@@ -141,7 +143,7 @@ case class normalizeWithClauses(mkException: (String, InputPosition) => CypherEx
     (additionalReturnItemsForOrderBy ++ maybeReturnItemForWhere, updatedOrderBy, updatedWhere)
   }
 
-  private def aliasOrderBy(existingAliases: Map[Expression, LogicalVariable], originalOrderBy: OrderBy): (Seq[AliasedReturnItem], OrderBy) = {
+  private def aliasOrderBy(existingAliases: Map[Expression, VarDeclare], originalOrderBy: OrderBy): (Seq[AliasedReturnItem], OrderBy) = {
     val (additionalReturnItems, updatedSortItems) = originalOrderBy.sortItems.foldLeft((Vector.empty[AliasedReturnItem], Vector.empty[SortItem])) {
       case ((returnItems, sortItems), item) => item.expression match {
         case _: Variable =>
@@ -162,44 +164,44 @@ case class normalizeWithClauses(mkException: (String, InputPosition) => CypherEx
     (additionalReturnItems, OrderBy(updatedSortItems)(originalOrderBy.position))
   }
 
-  private def aliasSortItem(existingAliases: Map[Expression, LogicalVariable], sortItem: SortItem): (Option[AliasedReturnItem], SortItem) = {
+  private def aliasSortItem(existingAliases: Map[Expression, VarDeclare], sortItem: SortItem): (Option[AliasedReturnItem], SortItem) = {
     val expression = sortItem.expression
     val (maybeReturnItem, replacementVariable) = aliasExpression(existingAliases, expression)
 
     val newSortItem = sortItem.endoRewrite(topDown(Rewriter.lift {
       case e: Expression if e == expression =>
-        replacementVariable.copyId
+        replacementVariable.declare
     }))
     (maybeReturnItem, newSortItem)
   }
 
-  private def aliasWhere(existingAliases: Map[Expression, LogicalVariable], originalWhere: Where): (Option[AliasedReturnItem], Where) = {
+  private def aliasWhere(existingAliases: Map[Expression, VarDeclare], originalWhere: Where): (Option[AliasedReturnItem], Where) = {
     originalWhere.expression match {
       case _: Variable =>
         (None, originalWhere)
 
       case e: Expression if !e.containsAggregate =>
         val (maybeReturnItem, replacementVariable) = aliasExpression(existingAliases, e)
-        (maybeReturnItem, Where(replacementVariable)(originalWhere.position))
+        (maybeReturnItem, Where(replacementVariable.load)(originalWhere.position))
 
       case e =>
         (None, originalWhere)
     }
   }
 
-  private def aliasExpression(existingAliases: Map[Expression, LogicalVariable], expression: Expression): (Option[AliasedReturnItem], LogicalVariable) = {
+  private def aliasExpression(existingAliases: Map[Expression, VarDeclare], expression: Expression): (Option[AliasedReturnItem], VarDeclare) = {
     existingAliases.get(expression) match {
       case Some(alias) =>
-        (None, alias.copyId)
+        (None, alias.declare)
 
       case None =>
-        val newVariable = Variable(FreshIdNameGenerator.name(expression.position))(expression.position)
+        val newVariable = VarDeclare(FreshIdNameGenerator.name(expression.position))(expression.position)
         val newExpression = expression.endoRewrite(topDown(Rewriter.lift {
           case e: Expression =>
-            existingAliases.get(e).map(_.copyId).getOrElse(e)
+            existingAliases.get(e).map(_.declare).getOrElse(e)
         }))
         val newReturnItem = AliasedReturnItem(newExpression, newVariable)(expression.position)
-        (Some(newReturnItem), newVariable.copyId)
+        (Some(newReturnItem), newVariable.declare)
     }
   }
 

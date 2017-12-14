@@ -18,13 +18,13 @@ package org.neo4j.cypher.internal.frontend.v3_4.ast
 
 import org.neo4j.cypher.internal.frontend.v3_4.semantics.{SemanticCheckable, SemanticExpressionCheck}
 import org.neo4j.cypher.internal.util.v3_4.{ASTNode, InputPosition}
-import org.neo4j.cypher.internal.v3_4.expressions.{Expression, LogicalVariable}
+import org.neo4j.cypher.internal.v3_4.expressions.{Expression, LogicalVariable, VarLike}
 
 case class OrderBy(sortItems: Seq[SortItem])(val position: InputPosition) extends ASTNode with SemanticCheckable {
   def semanticCheck = sortItems.semanticCheck
 
-  def dependencies: Set[LogicalVariable] =
-    sortItems.foldLeft(Set.empty[LogicalVariable]) { case (acc, item) => acc ++ item.expression.dependencies }
+  def dependencies: Set[VarLike] =
+    sortItems.foldLeft(Set.empty[VarLike]) { case (acc, item) => acc ++ item.expression.dependencies }
 }
 
 sealed trait SortItem extends ASTNode with SemanticCheckable {

@@ -19,7 +19,7 @@ package org.neo4j.cypher.internal.v3_4.expressions
 import org.neo4j.cypher.internal.util.v3_4.InputPosition
 
 case class MapProjection(
-                          name: Variable, // Since this is always rewritten to DesugaredMapProjection this
+                          name: VarLoad, // Since this is always rewritten to DesugaredMapProjection this
                                           // (and in the elements below) may not need to be LogicalVariable
                           items: Seq[MapProjectionElement],
                           definitionPos: Option[InputPosition] = None)
@@ -33,6 +33,6 @@ case class MapProjection(
 sealed trait MapProjectionElement extends Expression
 
 case class LiteralEntry(key: PropertyKeyName, exp: Expression)(val position: InputPosition) extends MapProjectionElement
-case class VariableSelector(id: Variable)(val position: InputPosition) extends MapProjectionElement
-case class PropertySelector(id: Variable)(val position: InputPosition) extends MapProjectionElement
+case class VariableSelector(id: VarLoad)(val position: InputPosition) extends MapProjectionElement
+case class PropertySelector(id: VarLoad)(val position: InputPosition) extends MapProjectionElement
 case class AllPropertiesSelector()(val position: InputPosition) extends MapProjectionElement

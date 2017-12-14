@@ -42,7 +42,7 @@ sealed trait UpdateClause extends Clause with SemanticAnalysisTooling {
 case class LoadCSV(
                     withHeaders: Boolean,
                     urlString: Expression,
-                    variable: Variable,
+                    variable: VarDeclare,
                     fieldTerminator: Option[StringLiteral]
                   )(val position: InputPosition) extends Clause with SemanticAnalysisTooling {
   override def name: String = "LOAD CSV"
@@ -79,7 +79,7 @@ sealed trait MultipleGraphClause extends Clause with SemanticAnalysisTooling {
 
 sealed trait CreateGraphClause extends MultipleGraphClause with UpdateClause {
   def snapshot: Boolean
-  def graph: Variable
+  def graph: VarLike
   def at: GraphUrl
   def of: Option[Pattern]
 
@@ -91,7 +91,8 @@ sealed trait CreateGraphClause extends MultipleGraphClause with UpdateClause {
     of.fold(SemanticCheckResult.success)(SemanticPatternCheck.check(Pattern.SemanticContext.Create, _))
 }
 
-final case class CreateRegularGraph(snapshot: Boolean, graph: Variable, of: Option[Pattern], at: GraphUrl)(val position: InputPosition)
+final case class CreateRegularGraph(snapshot: Boolean, graph: VarDeclare, of: Option[Pattern], at: GraphUrl)
+                                   (val position: InputPosition)
   extends CreateGraphClause {
 
   override def semanticCheck: SemanticCheck =
@@ -99,20 +100,22 @@ final case class CreateRegularGraph(snapshot: Boolean, graph: Variable, of: Opti
     SemanticState.recordCurrentScope(this)
 }
 
-final case class CreateNewSourceGraph(snapshot: Boolean, graph: Variable, of: Option[Pattern], at: GraphUrl)(val position: InputPosition)
+final case class CreateNewSourceGraph(snapshot: Boolean, graph: VarDeclare, of: Option[Pattern], at: GraphUrl)
+                                     (val position: InputPosition)
   extends CreateGraphClause {
 
   override def semanticCheck: SemanticCheck = error("Clause not rewritten as expected (see PreparatoryRewriting)", position)
 
 }
 
-final case class CreateNewTargetGraph(snapshot: Boolean, graph: Variable, of: Option[Pattern], at: GraphUrl)(val position: InputPosition)
+final case class CreateNewTargetGraph(snapshot: Boolean, graph: VarDeclare, of: Option[Pattern], at: GraphUrl)
+                                     (val position: InputPosition)
   extends CreateGraphClause {
 
   override def semanticCheck: SemanticCheck = error("Clause not rewritten as expected (see PreparatoryRewriting)", position)
 }
 
-final case class DeleteGraphs(graphs: Seq[Variable])(val position: InputPosition)
+final case class DeleteGraphs(graphs: Seq[VarDeclare])(val position: InputPosition)
   extends MultipleGraphClause with UpdateClause{
 
   override def name = "DELETE GRAPHS"
@@ -235,12 +238,12 @@ case class Match(
 
   private def checkHints: SemanticCheck = {
     val error: Option[SemanticCheck] = hints.collectFirst {
-      case hint@UsingIndexHint(Variable(variable), LabelName(labelName), properties)
+      case hint@UsingIndexHint(VarLoad(variable), LabelName(labelName), properties)
         if !containsLabelPredicate(variable, labelName) =>
         SemanticError(
           """|Cannot use index hint in this context.
             | Must use label on node that hint is referring to.""".stripLinesAndMargins, hint.position)
-      case hint@UsingIndexHint(Variable(variable), LabelName(labelName), properties)
+      case hint@UsingIndexHint(VarLoad(variable), LabelName(labelName), properties)
         if !containsPropertyPredicates(variable, properties) =>
         SemanticError(
           """|Cannot use index hint in this context.
@@ -251,7 +254,7 @@ case class Match(
             | The comparison cannot be performed between two property values.
             | Note that the label and property comparison must be specified on a
             | non-optional node""".stripLinesAndMargins, hint.position)
-      case hint@UsingScanHint(Variable(variable), LabelName(labelName))
+      case hint@UsingScanHint(VarLoad(variable), LabelName(labelName))
         if !containsLabelPredicate(variable, labelName) =>
         SemanticError(
           """|Cannot use label scan hint in this context.
@@ -267,28 +270,28 @@ case class Match(
   private def containsPropertyPredicates(variable: String, propertiesInHint: Seq[PropertyKeyName]): Boolean = {
     val propertiesInPredicates: Seq[String] = (where match {
       case Some(w) => w.treeFold(Seq.empty[String]) {
-        case Equals(Property(Variable(id), PropertyKeyName(name)), other) if id == variable && applicable(other) =>
+        case Equals(Property(v:VarLike, PropertyKeyName(name)), other) if v.name == variable && applicable(other) =>
           acc => (acc :+ name, None)
-        case Equals(other, Property(Variable(id), PropertyKeyName(name))) if id == variable && applicable(other) =>
+        case Equals(other, Property(v:VarLike, PropertyKeyName(name))) if v.name == variable && applicable(other) =>
           acc => (acc :+ name, None)
-        case In(Property(Variable(id), PropertyKeyName(name)),_) if id == variable =>
+        case In(Property(v:VarLike, PropertyKeyName(name)),_) if v.name == variable =>
           acc => (acc :+ name, None)
-        case predicate@FunctionInvocation(_, _, _, IndexedSeq(Property(Variable(id), PropertyKeyName(name))))
-          if id == variable && predicate.function == functions.Exists =>
+        case predicate@FunctionInvocation(_, _, _, IndexedSeq(Property(v:VarLike, PropertyKeyName(name))))
+          if v.name == variable && predicate.function == functions.Exists =>
           acc => (acc :+ name, None)
-        case IsNotNull(Property(Variable(id), PropertyKeyName(name))) if id == variable =>
+        case IsNotNull(Property(v:VarLike, PropertyKeyName(name))) if v.name == variable =>
           acc => (acc :+ name, None)
-        case StartsWith(Property(Variable(id), PropertyKeyName(name)), _) if id == variable =>
+        case StartsWith(Property(v:VarLike, PropertyKeyName(name)), _) if v.name == variable =>
           acc => (acc :+ name, None)
-        case EndsWith(Property(Variable(id), PropertyKeyName(name)), _) if id == variable =>
+        case EndsWith(Property(v:VarLike, PropertyKeyName(name)), _) if v.name == variable =>
           acc => (acc :+ name, None)
-        case Contains(Property(Variable(id), PropertyKeyName(name)), _) if id == variable =>
+        case Contains(Property(v:VarLike, PropertyKeyName(name)), _) if v.name == variable =>
           acc => (acc :+ name, None)
         case expr: InequalityExpression =>
           acc =>
             val newAcc: Seq[String] = Seq(expr.lhs, expr.rhs).foldLeft(acc) { (acc, expr) =>
               expr match {
-                case Property(Variable(id), PropertyKeyName(name)) if id == variable => acc :+ name
+                case Property(v:VarLike, PropertyKeyName(name)) if v.name == variable => acc :+ name
                 case _ => acc
               }
             }
@@ -300,7 +303,7 @@ case class Match(
       }
       case None => Seq.empty
     }) ++ pattern.treeFold(Seq.empty[String]) {
-      case NodePattern(Some(Variable(id)), _, Some(MapExpression(prop))) if variable == id =>
+      case NodePattern(Some(VarAmbiguous(id)), _, Some(MapExpression(prop))) if variable == id =>
         acc => (acc ++ prop.map(_._1.name), None)
     }
 
@@ -322,7 +325,7 @@ case class Match(
 
   private def containsLabelPredicate(variable: String, label: String): Boolean = {
     var labels = pattern.fold(Seq.empty[String]) {
-      case NodePattern(Some(Variable(id)), nodeLabels, _) if variable == id =>
+      case NodePattern(Some(VarAmbiguous(id)), nodeLabels, _) if variable == id =>
         list => list ++ nodeLabels.map(_.name)
     }
     labels = where match {
@@ -416,7 +419,7 @@ case class Remove(items: Seq[RemoveItem])(val position: InputPosition) extends U
 }
 
 case class Foreach(
-                    variable: Variable,
+                    variable: VarDeclare,
                     expression: Expression,
                     updates: Seq[Clause]
                   )(val position: InputPosition) extends UpdateClause {
@@ -434,7 +437,7 @@ case class Foreach(
 
 case class Unwind(
                    expression: Expression,
-                   variable: Variable
+                   variable: VarDeclare
                  )(val position: InputPosition) extends Clause with SemanticAnalysisTooling {
   override def name = "UNWIND"
 
@@ -643,7 +646,7 @@ case class Return(distinct: Boolean,
     }
 }
 
-case class PragmaWithout(excluded: Seq[LogicalVariable])(val position: InputPosition) extends HorizonClause {
+case class PragmaWithout(excluded: Seq[VarDeclare])(val position: InputPosition) extends HorizonClause {
   override def name = "_PRAGMA WITHOUT"
   val excludedNames: Set[String] = excluded.map(_.name).toSet
 

@@ -23,7 +23,7 @@ import org.neo4j.cypher.internal.v3_4.expressions._
 
 sealed trait SetItem extends ASTNode with SemanticCheckable
 
-case class SetLabelItem(variable: Variable, labels: Seq[LabelName])(val position: InputPosition) extends SetItem {
+case class SetLabelItem(variable: VarLoad, labels: Seq[LabelName])(val position: InputPosition) extends SetItem {
   def semanticCheck =
     SemanticExpressionCheck.simple(variable) chain
     SemanticExpressionCheck.expectType(CTNode.covariant, variable)
@@ -38,7 +38,7 @@ case class SetPropertyItem(property: LogicalProperty, expression: Expression)(va
       expectType(CTNode.covariant | CTRelationship.covariant, property.map)
 }
 
-case class SetExactPropertiesFromMapItem(variable: Variable, expression: Expression)
+case class SetExactPropertiesFromMapItem(variable: VarLoad, expression: Expression)
                                         (val position: InputPosition) extends SetProperty {
   def semanticCheck =
     SemanticExpressionCheck.simple(variable) chain
@@ -47,7 +47,7 @@ case class SetExactPropertiesFromMapItem(variable: Variable, expression: Express
       expectType(CTMap.covariant, expression)
 }
 
-case class SetIncludingPropertiesFromMapItem(variable: Variable, expression: Expression)
+case class SetIncludingPropertiesFromMapItem(variable: VarLoad, expression: Expression)
                                         (val position: InputPosition) extends SetProperty {
   def semanticCheck =
     SemanticExpressionCheck.simple(variable) chain

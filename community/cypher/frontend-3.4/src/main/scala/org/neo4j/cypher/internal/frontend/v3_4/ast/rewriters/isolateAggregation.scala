@@ -51,7 +51,7 @@ case object isolateAggregation extends Rewriter {
           val expressionsToIncludeInWith: Set[Expression] = others ++ extractExpressionsToInclude(withAggregations)
 
           val withReturnItems: Set[ReturnItem] = expressionsToIncludeInWith.map {
-            case e => AliasedReturnItem(e, Variable(AggregationNameGenerator.name(e.position))(e.position))(e.position)
+            case e => AliasedReturnItem(e, VarDeclare(AggregationNameGenerator.name(e.position))(e.position))(e.position)
           }
           val pos = clause.position
           val withClause = With(distinct = false, ReturnItems(includeExisting = false, withReturnItems.toIndexedSeq)(pos), PassAllGraphReturnItems(pos), None, None, None, None)(pos)
@@ -70,7 +70,7 @@ case object isolateAggregation extends Rewriter {
       case original: Expression =>
         val rewrittenExpression = withReturnItems.collectFirst {
           case item@AliasedReturnItem(expression, variable) if original == expression =>
-            item.alias.get.copyId
+            VarDeclare.of(item.alias.get)
         }
         rewrittenExpression getOrElse original
     }
@@ -99,7 +99,8 @@ case object isolateAggregation extends Rewriter {
         case e: IterablePredicateExpression  if hasAggregateButIsNotAggregate(e) =>
           val predicate: Expression = e.innerPredicate.getOrElse(throw new InternalException("Should never be empty"))
           // Weird way of doing it to make scalac happy
-          Set(e.expression) ++ predicate.dependencies - e.variable
+          val predicateDependencies:Set[Expression] = predicate.dependencies.map(_.load)
+          Set(e.expression) ++ predicateDependencies - e.variable.load
 
         case e if hasAggregateButIsNotAggregate(e) =>
           e.arguments

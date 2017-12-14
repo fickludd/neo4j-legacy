@@ -55,12 +55,12 @@ trait ProcedureCalls {
 
   private def AliasedProcedureResultItem: Rule1[ast.ProcedureResultItem] =
     rule("aliased procedure result field") {
-      ProcedureOutput ~~ keyword("AS") ~~ Variable ~~>> (ast.ProcedureResultItem(_, _))
+      ProcedureOutput ~~ keyword("AS") ~~ VariableDeclare ~~>> (ast.ProcedureResultItem(_, _))
     }
 
   private def SimpleProcedureResultItem: Rule1[ast.ProcedureResultItem] =
     rule("simple procedure result field") {
-      Variable ~~>> (ast.ProcedureResultItem(_))
+      VariableDeclare ~~>> (ast.ProcedureResultItem(_))
     }
 
   private def ProcedureOutput: Rule1[exp.ProcedureOutput] =

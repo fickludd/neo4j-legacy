@@ -16,21 +16,21 @@
  */
 package org.neo4j.cypher.internal.frontend.v3_4.ast
 
-import org.neo4j.cypher.internal.util.v3_4.{ASTNode, InputPosition}
 import org.neo4j.cypher.internal.frontend.v3_4._
 import org.neo4j.cypher.internal.frontend.v3_4.semantics.SemanticAnalysisTooling
 import org.neo4j.cypher.internal.util.v3_4.symbols._
-import org.neo4j.cypher.internal.v3_4.expressions.{LogicalVariable, ProcedureOutput, Variable}
+import org.neo4j.cypher.internal.util.v3_4.{ASTNode, InputPosition}
+import org.neo4j.cypher.internal.v3_4.expressions.{ProcedureOutput, VarDeclare}
 
 object ProcedureResultItem {
-  def apply(output: ProcedureOutput, variable: Variable)(position: InputPosition): ProcedureResultItem =
+  def apply(output: ProcedureOutput, variable: VarDeclare)(position: InputPosition): ProcedureResultItem =
     ProcedureResultItem(Some(output), variable)(position)
 
-  def apply(variable: Variable)(position: InputPosition): ProcedureResultItem =
+  def apply(variable: VarDeclare)(position: InputPosition): ProcedureResultItem =
     ProcedureResultItem(None, variable)(position)
 }
 
-case class ProcedureResultItem(output: Option[ProcedureOutput], variable: LogicalVariable)(val position: InputPosition)
+case class ProcedureResultItem(output: Option[ProcedureOutput], variable: VarDeclare)(val position: InputPosition)
   extends ASTNode with SemanticAnalysisTooling {
 
   val outputName: String = output.map(_.name).getOrElse(variable.name)

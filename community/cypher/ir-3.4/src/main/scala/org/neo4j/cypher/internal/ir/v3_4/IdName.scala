@@ -21,7 +21,11 @@ package org.neo4j.cypher.internal.ir.v3_4
 
 import org.neo4j.cypher.internal.v3_4.expressions.LogicalVariable
 
-final case class IdName(name: String)
+final case class IdName(name: String) {
+  if (name == "  UNNAMED1") {
+    println("gotcha")
+  }
+}
 
 object IdName {
   implicit val byName = Ordering[String].on[IdName](_.name)

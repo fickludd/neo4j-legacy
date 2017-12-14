@@ -27,8 +27,14 @@ trait Literals extends Parser
 
   def Expression: Rule1[ast.Expression]
 
-  def Variable: Rule1[ast.Variable] =
-    rule("a variable") { SymbolicNameString ~~>> (ast.Variable(_) ) }.memoMismatches
+  def VariableLoad: Rule1[ast.VarLoad] =
+    rule("a variable") { SymbolicNameString ~~>> (ast.VarLoad(_) ) }.memoMismatches
+
+  def VariableDeclare: Rule1[ast.VarDeclare] =
+    rule("a variable") { SymbolicNameString ~~>> (ast.VarDeclare(_) ) }.memoMismatches
+
+  def VariableAmbiguous: Rule1[ast.VarAmbiguous] =
+    rule("a variable") { SymbolicNameString ~~>> (ast.VarAmbiguous(_) ) }.memoMismatches
 
   def ReservedClauseStartKeyword: Rule0 =
     keyword("CALL") |
@@ -91,17 +97,18 @@ trait Literals extends Parser
     PropertyKeyName ~~ ch(':') ~~ Expression ~~>> (ast.LiteralEntry(_, _)))
 
   def PropertySelector: Rule1[ast.MapProjectionElement] = rule("property selector")(
-    ch('.') ~~ Variable ~~>> (ast.PropertySelector(_)))
+    ch('.') ~~ VariableLoad ~~>> (ast.PropertySelector(_)))
 
   def VariableSelector: Rule1[ast.MapProjectionElement] = rule("variable selector")(
-    Variable ~~>> (ast.VariableSelector(_)))
+    VariableLoad ~~>> (ast.VariableSelector(_)))
 
   def AllPropertiesSelector: Rule1[ast.MapProjectionElement] = rule("all properties selector")(
     ch('.') ~~ ch('*') ~ push(ast.AllPropertiesSelector()(_)))
 
   def MapProjection: Rule1[ast.MapProjection] = rule {
     group(
-      Variable ~~ ch('{') ~~ zeroOrMore(LiteralEntry | PropertySelector | VariableSelector | AllPropertiesSelector, CommaSep) ~~ ch('}')
+      VariableLoad ~~ ch('{') ~~ zeroOrMore(LiteralEntry | PropertySelector | VariableSelector | AllPropertiesSelector,
+        CommaSep) ~~ ch('}')
     ) ~~>> (ast.MapProjection(_, _))
   }
 

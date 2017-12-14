@@ -20,7 +20,7 @@ import org.neo4j.cypher.internal.util.v3_4.InputPosition
 
 trait FilteringExpression extends Expression {
   def name: String
-  def variable: LogicalVariable
+  def variable: VarDeclare
   def expression: Expression
   def innerPredicate: Option[Expression]
 
@@ -35,7 +35,8 @@ case class FilterExpression(scope: FilterScope, expression: Expression)(val posi
 }
 
 object FilterExpression {
-  def apply(variable: Variable, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): FilterExpression =
+  def apply(variable: VarDeclare, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition):
+  FilterExpression =
     FilterExpression(FilterScope(variable, innerPredicate)(position), expression)(position)
 }
 
@@ -49,7 +50,7 @@ case class ExtractExpression(scope: ExtractScope, expression: Expression)(val po
 }
 
 object ExtractExpression {
-  def apply(variable: Variable,
+  def apply(variable: VarDeclare,
             expression: Expression,
             innerPredicate: Option[Expression],
             extractExpression: Option[Expression])(position: InputPosition): ExtractExpression =
@@ -67,26 +68,26 @@ case class ListComprehension(scope: ExtractScope, expression: Expression)(val po
 }
 
 object ListComprehension {
-  def apply(variable: Variable,
+  def apply(variable: VarDeclare,
             expression: Expression,
             innerPredicate: Option[Expression],
             extractExpression: Option[Expression])(position: InputPosition): ListComprehension =
     ListComprehension(ExtractScope(variable, innerPredicate, extractExpression)(position), expression)(position)
 }
 
-case class PatternComprehension(namedPath: Option[LogicalVariable], pattern: RelationshipsPattern,
+case class PatternComprehension(namedPath: Option[VarDeclare], pattern: RelationshipsPattern,
                                 predicate: Option[Expression], projection: Expression,
-                                outerScope: Set[LogicalVariable] = Set.empty)
+                                outerScope: Set[VarDeclare] = Set.empty)
                                (val position: InputPosition)
   extends ScopeExpression {
 
   self =>
 
-  def withOuterScope(outerScope: Set[LogicalVariable]) =
+  def withOuterScope(outerScope: Set[VarDeclare]) =
     copy(outerScope = outerScope)(position)
 
-  override val introducedVariables: Set[LogicalVariable] = {
-    val introducedInternally = namedPath.toSet ++ pattern.element.allVariables
+  override val introducedVariables: Set[VarLike] = {
+    val introducedInternally: Set[VarLike] = namedPath.toSet ++ pattern.element.allVariables
     val introducedExternally = introducedInternally -- outerScope
     introducedExternally
   }
@@ -95,7 +96,7 @@ case class PatternComprehension(namedPath: Option[LogicalVariable], pattern: Rel
 sealed trait IterablePredicateExpression extends FilteringExpression {
 
   def scope: FilterScope
-  def variable: LogicalVariable = scope.variable
+  def variable: VarDeclare = scope.variable
   def innerPredicate: Option[Expression] = scope.innerPredicate
 
   override def asCanonicalStringVal: String = {
@@ -109,7 +110,7 @@ case class AllIterablePredicate(scope: FilterScope, expression: Expression)(val 
 }
 
 object AllIterablePredicate {
-  def apply(variable: LogicalVariable, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): AllIterablePredicate =
+  def apply(variable: VarDeclare, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): AllIterablePredicate =
     AllIterablePredicate(FilterScope(variable, innerPredicate)(position), expression)(position)
 }
 
@@ -118,7 +119,7 @@ case class AnyIterablePredicate(scope: FilterScope, expression: Expression)(val 
 }
 
 object AnyIterablePredicate {
-  def apply(variable: LogicalVariable, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): AnyIterablePredicate =
+  def apply(variable: VarDeclare, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): AnyIterablePredicate =
     AnyIterablePredicate(FilterScope(variable, innerPredicate)(position), expression)(position)
 }
 
@@ -127,7 +128,7 @@ case class NoneIterablePredicate(scope: FilterScope, expression: Expression)(val
 }
 
 object NoneIterablePredicate {
-  def apply(variable: LogicalVariable, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): NoneIterablePredicate =
+  def apply(variable: VarDeclare, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): NoneIterablePredicate =
     NoneIterablePredicate(FilterScope(variable, innerPredicate)(position), expression)(position)
 }
 
@@ -136,7 +137,7 @@ case class SingleIterablePredicate(scope: FilterScope, expression: Expression)(v
 }
 
 object SingleIterablePredicate {
-  def apply(variable: LogicalVariable, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): SingleIterablePredicate =
+  def apply(variable: VarDeclare, expression: Expression, innerPredicate: Option[Expression])(position: InputPosition): SingleIterablePredicate =
     SingleIterablePredicate(FilterScope(variable, innerPredicate)(position), expression)(position)
 }
 
@@ -149,7 +150,8 @@ case class ReduceExpression(scope: ReduceScope, init: Expression, list: Expressi
 object ReduceExpression {
   val AccumulatorExpressionTypeMismatchMessageGenerator = (expected: String, existing: String) => s"accumulator is $expected but expression has type $existing"
 
-  def apply(accumulator: Variable, init: Expression, variable: Variable, list: Expression, expression: Expression)(position: InputPosition): ReduceExpression =
+  def apply(accumulator: VarDeclare, init: Expression, variable: VarDeclare, list: Expression, expression: Expression)
+           (position: InputPosition): ReduceExpression =
     ReduceExpression(ReduceScope(accumulator, variable, expression)(position), init, list)(position)
 }
 

@@ -21,7 +21,7 @@ import org.neo4j.cypher.internal.frontend.v3_4.ast._
 import org.neo4j.cypher.internal.frontend.v3_4.phases.CompilationPhaseTracer.CompilationPhase
 import org.neo4j.cypher.internal.frontend.v3_4.phases.{BaseContext, BaseState, Condition, Phase}
 import org.neo4j.cypher.internal.frontend.v3_4.semantics.{Scope, SemanticTable, SymbolUse}
-import org.neo4j.cypher.internal.v3_4.expressions.{LogicalVariable, ProcedureOutput, Variable}
+import org.neo4j.cypher.internal.v3_4.expressions.{LogicalVariable, ProcedureOutput, VarDeclare, Variable}
 
 object Namespacer extends Phase[BaseContext, BaseState, BaseState] {
   type VariableRenamings = Map[Ref[Variable], Variable]
@@ -56,8 +56,8 @@ object Namespacer extends Phase[BaseContext, BaseState, BaseState] {
     }.toSet
   }
 
-  private def returnAliases(statement: Statement): Set[Ref[LogicalVariable]] =
-    statement.treeFold(Set.empty[Ref[LogicalVariable]]) {
+  private def returnAliases(statement: Statement): Set[Ref[VarDeclare]] =
+    statement.treeFold(Set.empty[Ref[VarDeclare]]) {
 
       case With(_, _, GraphReturnItems(_, items), _, _, _, _) =>
         val gVars = extractGraphVars(items)
@@ -65,26 +65,26 @@ object Namespacer extends Phase[BaseContext, BaseState, BaseState] {
 
       // ignore variable in StartItem that represents index names and key names
       case Return(_, ReturnItems(_, items), graphItems, _, _, _, _) =>
-        val variables = items.map(_.alias.map(Ref[LogicalVariable]).get)
+        val variables = items.map(_.alias.map(Ref[VarDeclare]).get)
         val gVars = graphItems.map(_.items).map(extractGraphVars).getOrElse(Seq.empty)
         acc => (acc ++ variables ++ gVars, Some(identity))
     }
 
-  private def extractGraphVars(items: Seq[GraphReturnItem]): Seq[Ref[LogicalVariable]] = {
+  private def extractGraphVars(items: Seq[GraphReturnItem]): Seq[Ref[VarDeclare]] = {
     items.flatMap { item =>
       item.graphs.flatMap {
         case g: GraphAs =>
-          Seq(g.ref, g.as.get).map(Ref[Variable])
+          Seq(g.ref.declare, g.as.get.declare).map(Ref[VarDeclare])
         case x =>
-          x.as.map(Ref[Variable])
+          x.as.map(v => Ref[VarDeclare](v.declare))
       }
     }
   }
 
   private def variableRenamings(statement: Statement, variableDefinitions: Map[SymbolUse, SymbolUse],
-                                ambiguousNames: Set[String], protectedVariables: Set[Ref[LogicalVariable]]): VariableRenamings =
-    statement.treeFold(Map.empty[Ref[Variable], Variable]) {
-      case i: Variable if ambiguousNames(i.name) && !protectedVariables(Ref(i)) =>
+                                ambiguousNames: Set[String], protectedVariables: Set[Ref[VarDeclare]]): VariableRenamings =
+    statement.treeFold(Map.empty[Ref[VarDeclare], VarDeclare]) {
+      case i: VarDeclare if ambiguousNames(i.name) && !protectedVariables(Ref(i)) =>
         val symbolDefinition = variableDefinitions(SymbolUse(i))
         val newVariable = i.renameId(s"  ${symbolDefinition.nameWithPosition}")
         val renaming = Ref(i) -> newVariable

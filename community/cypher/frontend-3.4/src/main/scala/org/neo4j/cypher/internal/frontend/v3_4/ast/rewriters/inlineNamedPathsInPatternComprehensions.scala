@@ -26,17 +26,15 @@ case object inlineNamedPathsInPatternComprehensions extends Rewriter {
       val patternElement = pattern.element
       expr.copy(
         namedPath = None,
-        predicate = predicate.map(_.inline(path, patternElement)),
-        projection = projection.inline(path, patternElement)
+        predicate = predicate.map(p => inline(p, path, patternElement)),
+        projection = inline(projection, path, patternElement)
       )(expr.position)
   })
 
-  private implicit final class InliningExpression(val expr: Expression) extends AnyVal {
-    def inline(path: LogicalVariable, patternElement: PatternElement) =
+  private def inline(expr: Expression, path: VarDeclare, patternElement: PatternElement) =
       expr.copyAndReplace(path) by {
         PathExpression(projectNamedPaths.patternPartPathExpression(patternElement))(expr.position)
       }
-  }
 
   override def apply(v: AnyRef): AnyRef = instance(v)
 }

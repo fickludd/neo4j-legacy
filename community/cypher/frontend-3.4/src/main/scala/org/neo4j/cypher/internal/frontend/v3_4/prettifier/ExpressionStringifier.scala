@@ -41,8 +41,8 @@ case class ExpressionStringifier(extender: Expression => String = e => throw new
         l.asCanonicalStringVal
       case e: BinaryOperatorExpression =>
         s"${parens(e, e.lhs)} ${e.canonicalOperatorSymbol} ${parens(e, e.rhs)}"
-      case Variable(v) =>
-        backtick(v)
+      case v:VarLoad =>
+        varLike(v)
       case ListLiteral(expressions) =>
         expressions.map(this.apply).mkString("[", ", ", "]")
       case FunctionInvocation(namespace, functionName, distinct, args) =>
@@ -78,19 +78,19 @@ case class ExpressionStringifier(extender: Expression => String = e => throw new
       case not@Not(arg) =>
         s"not ${parens(not, arg)}"
       case ListComprehension(s, expression) =>
-        val v = this.apply(s.variable)
+        val v = this.apply(s.variable.load)
         val p = s.innerPredicate.map(e => " WHERE " + this.apply(e)).getOrElse("")
         val e = s.extractExpression.map(e => " | " + this.apply(e)).getOrElse("")
         val expr = this.apply(expression)
         s"[$v IN $expr$p$e]"
       case ExtractExpression(s, expression) =>
-        val v = this.apply(s.variable)
+        val v = this.apply(s.variable.load)
         val p = s.innerPredicate.map(e => " WHERE " + this.apply(e)).getOrElse("")
         val e = s.extractExpression.map(e => " | " + this.apply(e)).getOrElse("")
         val expr = this.apply(expression)
         s"extract($v IN $expr$p$e)"
       case PatternComprehension(variable, RelationshipsPattern(relChain), predicate, proj, _) =>
-        val v = variable.map(e => s"${this.apply(e)} = ").getOrElse("")
+        val v = variable.map(v => s"${this.apply(v.load)} = ").getOrElse("")
         val p = predicate.map(e => " WHERE " + this.apply(e)).getOrElse("")
         s"[$v${pattern(relChain)}$p | ${this.apply(proj)}]"
       case e@HasLabels(arg, labels) =>
@@ -121,7 +121,7 @@ case class ExpressionStringifier(extender: Expression => String = e => throw new
         expressions.map(x => parens(e, x)).mkString(" OR ")
       case ShortestPathExpression(s@ShortestPaths(r:RelationshipChain, _)) =>
         s"${s.name}(${pattern(r)})"
-      case ReduceExpression(ReduceScope(Variable(acc), Variable(identifier), expression), init, list) =>
+      case ReduceExpression(ReduceScope(VarDeclare(acc), VarDeclare(identifier), expression), init, list) =>
         val a = backtick(acc)
         val v = backtick(identifier)
         val i = this.apply(init)
@@ -136,6 +136,9 @@ case class ExpressionStringifier(extender: Expression => String = e => throw new
     }
   }
 
+  def varLike(v: VarLike): String =
+    backtick(v.name)
+
   private def parens(caller: Expression, argument: Expression) = {
     val thisPrecedence = precedenceLevel(caller)
     val argumentPrecedence = precedenceLevel(argument)
@@ -146,7 +149,7 @@ case class ExpressionStringifier(extender: Expression => String = e => throw new
   }
 
   private def prettyScope(s: FilterScope, expression: Expression) = {
-    val v = this.apply(s.variable)
+    val v = this.apply(s.variable.load)
     val e = this.apply(expression)
     val p = s.innerPredicate.map(this.apply).getOrElse("")
     s"($v IN $e WHERE $p)"
@@ -166,7 +169,7 @@ case class ExpressionStringifier(extender: Expression => String = e => throw new
   }
 
   def node(nodePattern: NodePattern): String = {
-    val name = nodePattern.variable.map(this.apply).getOrElse("")
+    val name = nodePattern.variable.map(varLike).getOrElse("")
     val labels = if (nodePattern.labels.isEmpty) "" else
       nodePattern.labels.map(l => backtick(l.name)).mkString(":", ":", "")
     val e = props(s"$name$labels", nodePattern.properties)
@@ -180,7 +183,7 @@ case class ExpressionStringifier(extender: Expression => String = e => throw new
       ""
     else
       relationship.types.map(l => backtick(l.name)).mkString(":", ":", "")
-    val name = relationship.variable.map(this.apply).getOrElse("")
+    val name = relationship.variable.map(varLike).getOrElse("")
     val length = relationship.length match {
       case None => ""
       case Some(None) => "*"

@@ -19,11 +19,11 @@ package org.neo4j.cypher.internal.frontend.v3_4.ast
 import org.neo4j.cypher.internal.util.v3_4.{ASTNode, InputPosition}
 import org.neo4j.cypher.internal.frontend.v3_4.SemanticCheck
 import org.neo4j.cypher.internal.frontend.v3_4.semantics._
-import org.neo4j.cypher.internal.v3_4.expressions.{Pattern, Variable}
+import org.neo4j.cypher.internal.v3_4.expressions.{Pattern, VarLike, Variable}
 
 sealed trait SingleGraphAs extends ASTNode with SemanticCheckable with SemanticAnalysisTooling {
 
-  def as: Option[Variable]
+  def as: Option[VarLike]
 
   def generated: Boolean
 
@@ -31,7 +31,7 @@ sealed trait SingleGraphAs extends ASTNode with SemanticCheckable with SemanticA
 
   def isUnboundContextGraph: Boolean = false
 
-  def withNewName(newName: Variable): SingleGraphAs
+  def withNewName(newName: VarLike): SingleGraphAs
   def asGenerated: SingleGraphAs
 
   override def semanticCheck: SemanticCheck = SemanticCheckResult.success
@@ -64,24 +64,26 @@ sealed trait BoundContextGraphAs extends BoundGraphAs {
   }
 }
 
-final case class SourceGraphAs(as: Option[Variable], generated: Boolean = false)(val position: InputPosition) extends BoundContextGraphAs {
+final case class SourceGraphAs(as: Option[VarLike], generated: Boolean = false)(val position: InputPosition) extends
+  BoundContextGraphAs {
   override protected def contextGraphName: String = "source graph"
   override def name(context: Option[ContextGraphs]): Option[String] = super.name(context) orElse context.map(_.source)
-  override def withNewName(newName: Variable): SourceGraphAs = copy(as = Some(newName))(position)
+  override def withNewName(newName: VarLike): SourceGraphAs = copy(as = Some(newName))(position)
   override def asGenerated: SourceGraphAs = copy(generated = true)(position)
 }
 
-final case class TargetGraphAs(as: Option[Variable], generated: Boolean = false)(val position: InputPosition) extends BoundContextGraphAs {
+final case class TargetGraphAs(as: Option[VarLike], generated: Boolean = false)(val position: InputPosition) extends
+  BoundContextGraphAs {
   override protected def contextGraphName: String = "target graph"
   override def name(context: Option[ContextGraphs]): Option[String] = super.name(context) orElse context.map(_.target)
-  override def withNewName(newName: Variable): TargetGraphAs = copy(as = Some(newName))(position)
+  override def withNewName(newName: VarLike): TargetGraphAs = copy(as = Some(newName))(position)
   override def asGenerated: TargetGraphAs = copy(generated = true)(position)
 }
 
-final case class GraphAs(ref: Variable, as: Option[Variable], generated: Boolean = false)(val position: InputPosition)
+final case class GraphAs(ref: VarLike, as: Option[VarLike], generated: Boolean = false)(val position: InputPosition)
   extends BoundGraphAs {
 
-  override def withNewName(newName: Variable): GraphAs = copy(as = Some(newName))(position)
+  override def withNewName(newName: VarLike): GraphAs = copy(as = Some(newName))(position)
   override def asGenerated: GraphAs = copy(generated = true)(position)
 
   override def semanticCheck: SemanticCheck = SemanticExpressionCheck.ensureGraphDefined(ref)
@@ -90,19 +92,19 @@ final case class GraphAs(ref: Variable, as: Option[Variable], generated: Boolean
 
 sealed trait NewGraphAs extends SingleGraphAs
 
-final case class GraphOfAs(of: Pattern, as: Option[Variable], generated: Boolean = false)(val position: InputPosition)
+final case class GraphOfAs(of: Pattern, as: Option[VarLike], generated: Boolean = false)(val position: InputPosition)
   extends NewGraphAs {
 
-  override def withNewName(newName: Variable): GraphOfAs = copy(as = Some(newName))(position)
+  override def withNewName(newName: VarLike): GraphOfAs = copy(as = Some(newName))(position)
   override def asGenerated: GraphOfAs = copy(generated = true)(position)
 
   override def semanticCheck: SemanticCheck = SemanticPatternCheck.check(Pattern.SemanticContext.GraphOf, of)
 }
 
-final case class GraphAtAs(at: GraphUrl, as: Option[Variable], generated: Boolean = false)(val position: InputPosition)
+final case class GraphAtAs(at: GraphUrl, as: Option[VarLike], generated: Boolean = false)(val position: InputPosition)
   extends NewGraphAs {
 
-  override def withNewName(newName: Variable): GraphAtAs = copy(as = Some(newName))(position)
+  override def withNewName(newName: VarLike): GraphAtAs = copy(as = Some(newName))(position)
   override def asGenerated: GraphAtAs = copy(generated = true)(position)
 
   override def semanticCheck: SemanticCheck = at.semanticCheck

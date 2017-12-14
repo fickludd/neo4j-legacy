@@ -37,7 +37,7 @@ case class DropIndex(label: LabelName, properties: List[PropertyKeyName])(val po
 }
 
 trait PropertyConstraintCommand extends Command with SemanticAnalysisTooling {
-  def variable: Variable
+  def variable: VarDeclare
 
   def property: Property
 
@@ -52,7 +52,7 @@ trait PropertyConstraintCommand extends Command with SemanticAnalysisTooling {
 }
 
 trait CompositePropertyConstraintCommand extends Command with SemanticAnalysisTooling {
-  def variable: Variable
+  def variable: VarDeclare
 
   def properties: Seq[Property]
 
@@ -106,18 +106,26 @@ trait RelationshipPropertyConstraintCommand extends PropertyConstraintCommand {
   def relType: RelTypeName
 }
 
-case class CreateNodeKeyConstraint(variable: Variable, label: LabelName, properties: Seq[Property])(val position: InputPosition) extends NodeKeyConstraintCommand
+case class CreateNodeKeyConstraint(variable: VarDeclare, label: LabelName, properties: Seq[Property])
+                                  (val position: InputPosition) extends NodeKeyConstraintCommand
 
-case class DropNodeKeyConstraint(variable: Variable, label: LabelName, properties: Seq[Property])(val position: InputPosition) extends NodeKeyConstraintCommand
+case class DropNodeKeyConstraint(variable: VarDeclare, label: LabelName, properties: Seq[Property])
+                                (val position: InputPosition) extends NodeKeyConstraintCommand
 
-case class CreateUniquePropertyConstraint(variable: Variable, label: LabelName, properties: Seq[Property])(val position: InputPosition) extends UniquePropertyConstraintCommand
+case class CreateUniquePropertyConstraint(variable: VarDeclare, label: LabelName, properties: Seq[Property])
+                                         (val position: InputPosition) extends UniquePropertyConstraintCommand
 
-case class DropUniquePropertyConstraint(variable: Variable, label: LabelName, properties: Seq[Property])(val position: InputPosition) extends UniquePropertyConstraintCommand
+case class DropUniquePropertyConstraint(variable: VarDeclare, label: LabelName, properties: Seq[Property])
+                                       (val position: InputPosition) extends UniquePropertyConstraintCommand
 
-case class CreateNodePropertyExistenceConstraint(variable: Variable, label: LabelName, property: Property)(val position: InputPosition) extends NodePropertyConstraintCommand
+case class CreateNodePropertyExistenceConstraint(variable: VarDeclare, label: LabelName, property: Property)
+                                                (val position: InputPosition) extends NodePropertyConstraintCommand
 
-case class DropNodePropertyExistenceConstraint(variable: Variable, label: LabelName, property: Property)(val position: InputPosition) extends NodePropertyConstraintCommand
+case class DropNodePropertyExistenceConstraint(variable: VarDeclare, label: LabelName, property: Property)
+                                              (val position: InputPosition) extends NodePropertyConstraintCommand
 
-case class CreateRelationshipPropertyExistenceConstraint(variable: Variable, relType: RelTypeName, property: Property)(val position: InputPosition) extends RelationshipPropertyConstraintCommand
+case class CreateRelationshipPropertyExistenceConstraint(variable: VarDeclare, relType: RelTypeName, property: Property)
+                                                        (val position: InputPosition) extends RelationshipPropertyConstraintCommand
 
-case class DropRelationshipPropertyExistenceConstraint(variable: Variable, relType: RelTypeName, property: Property)(val position: InputPosition) extends RelationshipPropertyConstraintCommand
+case class DropRelationshipPropertyExistenceConstraint(variable: VarDeclare, relType: RelTypeName, property: Property)
+                                                      (val position: InputPosition) extends RelationshipPropertyConstraintCommand

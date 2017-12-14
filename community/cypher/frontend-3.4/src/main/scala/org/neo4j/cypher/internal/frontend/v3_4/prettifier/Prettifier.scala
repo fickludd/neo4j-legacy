@@ -41,7 +41,7 @@ case class Prettifier(mkStringOf: ExpressionStringifier) {
 
   def asString(p: PatternPart): String = p match {
     case EveryPath(element) => asString(element)
-    case NamedPatternPart(variable, p) => s"${mkStringOf(variable)} = ${asString(p)}"
+    case NamedPatternPart(variable, p) => s"${mkStringOf.varLike(variable)} = ${asString(p)}"
   }
 
   def asString(m: Match): String = {
@@ -62,7 +62,7 @@ case class Prettifier(mkStringOf: ExpressionStringifier) {
   }
 
   private def asString(r: ReturnItem): String = r match {
-    case AliasedReturnItem(e, v) => mkStringOf(e) + " AS " + mkStringOf(v)
+    case AliasedReturnItem(e, v) => mkStringOf(e) + " AS " + mkStringOf.varLike(v)
     case UnaliasedReturnItem(e, _) => mkStringOf(e)
   }
 

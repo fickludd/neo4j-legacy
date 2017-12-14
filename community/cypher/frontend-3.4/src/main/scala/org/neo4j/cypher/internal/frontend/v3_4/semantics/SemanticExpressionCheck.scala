@@ -194,7 +194,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
 
       // Check the variable is defined and, if not, define it so that later errors are suppressed
       // This is used in expressions; in graphs we must make sure to sem check variables explicitly (!)
-      case x:Variable =>
+      case x:VarLoad =>
         s => s.ensureVariableDefined(x) match {
           case Right(ss) => SemanticCheckResult.success(ss)
           case Left(error) => s.declareVariable(x, CTAny.covariant) match {

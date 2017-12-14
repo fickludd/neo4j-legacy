@@ -20,7 +20,7 @@ import org.neo4j.cypher.internal.frontend.v3_4._
 import org.neo4j.cypher.internal.frontend.v3_4.semantics.SemanticCheckResult.success
 import org.neo4j.cypher.internal.frontend.v3_4.semantics._
 import org.neo4j.cypher.internal.util.v3_4.{ASTNode, InputPosition, InternalException}
-import org.neo4j.cypher.internal.v3_4.expressions.{Expression, LogicalVariable, MapProjection}
+import org.neo4j.cypher.internal.v3_4.expressions._
 
 sealed trait ReturnItemsDef extends ASTNode with SemanticCheckable with SemanticAnalysisTooling {
   /**
@@ -57,9 +57,9 @@ final case class ReturnItems(
 
   override def semanticCheck: SemanticCheck = items.semanticCheck chain ensureProjectedToUniqueIds
 
-  def aliases: Set[LogicalVariable] = items.flatMap(_.alias).toSet
+  def aliases: Set[VarDeclare] = items.flatMap(_.alias).toSet
 
-  def passedThrough: Set[LogicalVariable] = items.collect {
+  def passedThrough: Set[VarLike] = items.collect {
     case item => item.alias.collect { case ident if ident == item.expression => ident }
   }.flatten.toSet
 
@@ -91,7 +91,7 @@ final case class ReturnItems(
 
 sealed trait ReturnItem extends ASTNode with SemanticCheckable {
   def expression: Expression
-  def alias: Option[LogicalVariable]
+  def alias: Option[VarDeclare]
   def name: String
   def makeSureIsNotUnaliased(state: SemanticState): SemanticCheckResult
 
@@ -100,8 +100,8 @@ sealed trait ReturnItem extends ASTNode with SemanticCheckable {
 
 case class UnaliasedReturnItem(expression: Expression, inputText: String)(val position: InputPosition) extends ReturnItem {
   val alias = expression match {
-    case i: LogicalVariable => Some(i.bumpId)
-    case x: MapProjection => Some(x.name.bumpId)
+    case i: VarLoad => Some(i.declare)
+    case x: MapProjection => Some(x.name.declare)
     case _ => None
   }
   val name = alias.map(_.name) getOrElse { inputText.trim }
@@ -111,11 +111,11 @@ case class UnaliasedReturnItem(expression: Expression, inputText: String)(val po
 }
 
 object AliasedReturnItem {
-  def apply(v:LogicalVariable):AliasedReturnItem = AliasedReturnItem(v.copyId, v.copyId)(v.position)
+  def apply(v:VarDeclare):AliasedReturnItem = AliasedReturnItem(VarLoad(v.name)(v.position), v)(v.position)
 }
 
 //TODO variable should not be a Variable. A Variable is an expression, and the return item alias isn't
-case class AliasedReturnItem(expression: Expression, variable: LogicalVariable)(val position: InputPosition) extends ReturnItem {
+case class AliasedReturnItem(expression: Expression, variable: VarDeclare)(val position: InputPosition) extends ReturnItem {
   val alias = Some(variable)
   val name = variable.name
 

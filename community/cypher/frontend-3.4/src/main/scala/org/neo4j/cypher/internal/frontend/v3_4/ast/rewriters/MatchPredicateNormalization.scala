@@ -57,12 +57,13 @@ abstract class MatchPredicateNormalization(normalizer: MatchPredicateNormalizer)
     case p@PatternExpression(RelationshipsPattern(RelationshipChain(NodePattern(Some(node), List(), None),
                                                                     RelationshipPattern(None, types, None, None, dir, _),
                                                                     NodePattern(None, List(), None)))) =>
-      GreaterThan(calculateUsingGetDegree(p, node, types, dir), SignedDecimalIntegerLiteral("0")(p.position))(p.position)
+      GreaterThan(calculateUsingGetDegree(p, VarLoad.of(node), types, dir), SignedDecimalIntegerLiteral("0")(p.position))(p.position)
     // WHERE ()-[:R]->(a) to WHERE GetDegree( (a)<-[:R]-()) > 0
     case p@PatternExpression(RelationshipsPattern(RelationshipChain(NodePattern(None, List(), None),
                                                                     RelationshipPattern(None, types, None, None, dir, _),
                                                                     NodePattern(Some(node), List(), None)))) =>
-      GreaterThan(calculateUsingGetDegree(p, node, types, dir.reversed), SignedDecimalIntegerLiteral("0")(p.position))(p.position)
+      GreaterThan(calculateUsingGetDegree(p, VarLoad.of(node), types, dir.reversed), SignedDecimalIntegerLiteral("0")
+                  (p.position))(p.position)
 
     case a@And(lhs, rhs) =>
       And(lhs.endoRewrite(whereRewriter), rhs.endoRewrite(whereRewriter))(a.position)

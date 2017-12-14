@@ -18,7 +18,7 @@ package org.neo4j.cypher.internal.frontend.v3_4.parser
 
 import org.neo4j.cypher.internal.util.v3_4.InputPosition
 import org.neo4j.cypher.internal.frontend.v3_4.ast
-import org.neo4j.cypher.internal.v3_4.expressions.{Pattern => ASTPattern, Variable}
+import org.neo4j.cypher.internal.v3_4.expressions.{VarDeclare, Variable, Pattern => ASTPattern}
 import org.parboiled.scala._
 
 trait Clauses extends Parser
@@ -35,7 +35,7 @@ trait Clauses extends Parser
     keyword("LOAD CSV") ~~
       group(keyword("WITH HEADERS") ~ push(true) | push(false)) ~~
       keyword("FROM") ~~ Expression ~~
-      keyword("AS") ~~ Variable ~~
+      keyword("AS") ~~ VariableDeclare ~~
       optional(keyword("FIELDTERMINATOR") ~~ StringLiteral) ~~>>
       (ast.LoadCSV(_, _, _, _))
   }
@@ -63,16 +63,18 @@ trait Clauses extends Parser
     keyword("CREATE") ~~ keyword(">>")  ~~ CreatedGraph ~~>>(t => ast.CreateNewTargetGraph(t._1, t._2, t._3, t._4))
   }
 
-  private def CreatedGraph: Rule1[(Boolean, Variable, Option[ASTPattern], ast.GraphUrl)] =
+  private def CreatedGraph: Rule1[(Boolean, VarDeclare, Option[ASTPattern], ast.GraphUrl)] =
     CreatedGraphAt | CreatedGraphAs
 
-  private def CreatedGraphAt: Rule1[(Boolean,  Variable, Option[ASTPattern], ast.GraphUrl)] =
-    OptSnapshot ~~ keyword("GRAPH") ~~ Variable ~~ optional(keyword("OF") ~~ Pattern) ~~ keyword("AT") ~~ GraphUrl ~~> {
-      (snapshot, graph, pattern, url) => (snapshot, graph, pattern, url)
-    }
+  private def CreatedGraphAt: Rule1[(Boolean,  VarDeclare, Option[ASTPattern], ast.GraphUrl)] =
+    OptSnapshot ~~ keyword("GRAPH") ~~ VariableDeclare ~~ optional(keyword("OF") ~~ Pattern) ~~
+      keyword("AT") ~~ GraphUrl ~~> {
+        (snapshot, graph, pattern, url) => (snapshot, graph, pattern, url)
+      }
 
-  private def CreatedGraphAs: Rule1[(Boolean,  Variable, Option[ASTPattern], ast.GraphUrl)] =
-    OptSnapshot ~~ keyword("GRAPH") ~~ optional(keyword("OF") ~~ Pattern) ~~ keyword("AT") ~~ GraphUrl ~~ keyword("AS") ~~ Variable ~~> {
+  private def CreatedGraphAs: Rule1[(Boolean,  VarDeclare, Option[ASTPattern], ast.GraphUrl)] =
+    OptSnapshot ~~ keyword("GRAPH") ~~ optional(keyword("OF") ~~ Pattern) ~~ keyword("AT") ~~ GraphUrl ~~
+      keyword("AS") ~~ VariableDeclare ~~> {
       (snapshot, pattern, url, graph) => (snapshot, graph, pattern, url)
     }
 
@@ -94,9 +96,9 @@ trait Clauses extends Parser
 
   def DeleteGraphs: Rule1[ast.DeleteGraphs] = rule("DELETE GRAPHS") {
     keyword("DELETE") ~~ (
-      (keyword("GRAPHS") ~~ oneOrMore(Variable, separator = CommaSep) ~~>>(ast.DeleteGraphs(_)))
+      (keyword("GRAPHS") ~~ oneOrMore(VariableDeclare, separator = CommaSep) ~~>>(ast.DeleteGraphs(_)))
       |
-      (oneOrMore(keyword("GRAPH") ~~ Variable, separator = CommaSep) ~~>>(ast.DeleteGraphs(_)))
+      (oneOrMore(keyword("GRAPH") ~~ VariableDeclare, separator = CommaSep) ~~>>(ast.DeleteGraphs(_)))
     )
   }
 
@@ -140,7 +142,7 @@ trait Clauses extends Parser
 
   def Foreach: Rule1[ast.Foreach] = rule("FOREACH") {
     group(
-      keyword("FOREACH") ~~ "(" ~~ Variable ~~ keyword("IN") ~~ Expression ~~ "|" ~~
+      keyword("FOREACH") ~~ "(" ~~ VariableDeclare ~~ keyword("IN") ~~ Expression ~~ "|" ~~
         oneOrMore(Clause, separator = WS) ~~ ")") ~~>> (ast.Foreach(_, _, _))
   }
 
@@ -151,7 +153,7 @@ trait Clauses extends Parser
   )
 
   def Unwind: Rule1[ast.Unwind] = rule("UNWIND")(
-    group(keyword("UNWIND") ~~ Expression ~~ keyword("AS") ~~ Variable) ~~>> (ast.Unwind(_, _))
+    group(keyword("UNWIND") ~~ Expression ~~ keyword("AS") ~~ VariableDeclare) ~~>> (ast.Unwind(_, _))
   )
 
   def Return: Rule1[ast.Return] = rule("RETURN")(
@@ -165,7 +167,7 @@ trait Clauses extends Parser
       group(
         keyword("WITH NONE") ~ push(ast.ReturnItems(includeExisting = false, Seq())(_)) ~~ optional(Skip) ~~ optional(
           Limit) ~~ optional(Where)) ~~>> (ast.With(distinct = false, _, ast.PassAllGraphReturnItems(InputPosition.NONE), None, _, _, _))
-        | group(keyword("WITHOUT") ~~ oneOrMore(Variable, separator = CommaSep)) ~~>> (ast.PragmaWithout(_))
+        | group(keyword("WITHOUT") ~~ oneOrMore(VariableDeclare, separator = CommaSep)) ~~>> (ast.PragmaWithout(_))
       )
   }
 
@@ -178,9 +180,10 @@ trait Clauses extends Parser
   )
 
   private def Hint: Rule1[ast.UsingHint] = rule("USING")(
-    group(keyword("USING INDEX") ~~ Variable ~~ NodeLabel ~~ "(" ~~ oneOrMore(PropertyKeyName, separator = CommaSep) ~~ ")") ~~>> (ast.UsingIndexHint(_, _, _))
-      | group(keyword("USING JOIN ON") ~~ oneOrMore(Variable, separator = CommaSep)) ~~>> (ast.UsingJoinHint(_))
-      | group(keyword("USING SCAN") ~~ Variable ~~ NodeLabel) ~~>> (ast.UsingScanHint(_, _))
+    group(keyword("USING INDEX") ~~ VariableLoad ~~ NodeLabel ~~ "(" ~~ oneOrMore(PropertyKeyName, separator =
+      CommaSep) ~~ ")") ~~>> (ast.UsingIndexHint(_, _, _))
+      | group(keyword("USING JOIN ON") ~~ oneOrMore(VariableLoad, separator = CommaSep)) ~~>> (ast.UsingJoinHint(_))
+      | group(keyword("USING SCAN") ~~ VariableLoad ~~ NodeLabel) ~~>> (ast.UsingScanHint(_, _))
   )
 
   private def MergeAction = rule("ON")(
@@ -190,13 +193,13 @@ trait Clauses extends Parser
 
   private def SetItem: Rule1[ast.SetItem] = rule(
     PropertyExpression ~~ group(operator("=") ~~ Expression) ~~>> (ast.SetPropertyItem(_, _))
-      | Variable ~~ group(operator("=") ~~ Expression) ~~>> (ast.SetExactPropertiesFromMapItem(_, _))
-      | Variable ~~ group(operator("+=") ~~ Expression) ~~>> (ast.SetIncludingPropertiesFromMapItem(_, _))
-      | group(Variable ~~ NodeLabels) ~~>> (ast.SetLabelItem(_, _))
+      | VariableLoad ~~ group(operator("=") ~~ Expression) ~~>> (ast.SetExactPropertiesFromMapItem(_, _))
+      | VariableLoad ~~ group(operator("+=") ~~ Expression) ~~>> (ast.SetIncludingPropertiesFromMapItem(_, _))
+      | group(VariableLoad ~~ NodeLabels) ~~>> (ast.SetLabelItem(_, _))
   )
 
   private def RemoveItem: Rule1[ast.RemoveItem] = rule(
-    group(Variable ~~ NodeLabels) ~~>> (ast.RemoveLabelItem(_, _))
+    group(VariableLoad ~~ NodeLabels) ~~>> (ast.RemoveLabelItem(_, _))
       | PropertyExpression ~~> ast.RemovePropertyItem
   )
 
@@ -225,7 +228,7 @@ trait Clauses extends Parser
   )
 
   private def ReturnItem: Rule1[ast.ReturnItem] = rule(
-    group(Expression ~~ keyword("AS") ~~ Variable) ~~>> (ast.AliasedReturnItem(_, _))
+    group(Expression ~~ keyword("AS") ~~ VariableDeclare) ~~>> (ast.AliasedReturnItem(_, _))
       | group(Expression ~> (s => s)) ~~>> (ast.UnaliasedReturnItem(_, _))
   )
 

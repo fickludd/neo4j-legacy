@@ -23,7 +23,7 @@ sealed trait PathStep extends Product with Foldable with Rewritable {
 
   self =>
 
-  def dependencies: Set[Expression]
+  def dependencies: Set[VarLike]
 
   def dup(children: Seq[AnyRef]): this.type =
     if (children.iterator eqElements this.children)
@@ -38,20 +38,20 @@ sealed trait PathStep extends Product with Foldable with Rewritable {
     }
 }
 
-final case class NodePathStep(node: Expression, next: PathStep) extends PathStep {
+final case class NodePathStep(node: VarLike, next: PathStep) extends PathStep {
   val dependencies = next.dependencies + node
 }
 
-final case class SingleRelationshipPathStep(rel: Expression, direction: SemanticDirection, next: PathStep) extends PathStep {
+final case class SingleRelationshipPathStep(rel: VarLike, direction: SemanticDirection, next: PathStep) extends PathStep {
   val dependencies = next.dependencies + rel
 }
 
-final case class MultiRelationshipPathStep(rel: Expression, direction: SemanticDirection, next: PathStep) extends PathStep {
+final case class MultiRelationshipPathStep(rel: VarLike, direction: SemanticDirection, next: PathStep) extends PathStep {
   val dependencies = next.dependencies + rel
 }
 
 case object NilPathStep extends PathStep {
-  def dependencies = Set.empty[Expression]
+  def dependencies = Set.empty[VarLike]
 }
 
 case class PathExpression(step: PathStep)(val position: InputPosition) extends Expression

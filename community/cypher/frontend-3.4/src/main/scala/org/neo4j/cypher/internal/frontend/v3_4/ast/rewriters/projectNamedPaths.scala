@@ -25,16 +25,16 @@ import scala.annotation.tailrec
 
 case object projectNamedPaths extends Rewriter {
 
-  case class Projectibles(paths: Map[Variable, PathExpression] = Map.empty,
-                          protectedVariables: Set[Ref[LogicalVariable]] = Set.empty,
-                          variableRewrites: Map[Ref[LogicalVariable], PathExpression] = Map.empty) {
+  case class Projectibles(paths: Map[VarDeclare, PathExpression] = Map.empty,
+                          protectedVariables: Set[Ref[VarLike]] = Set.empty,
+                          variableRewrites: Map[Ref[VarLike], PathExpression] = Map.empty) {
 
     self =>
 
     def withoutNamedPaths = copy(paths = Map.empty)
-    def withProtectedVariable(ident: Ref[LogicalVariable]) = copy(protectedVariables = protectedVariables + ident)
-    def withNamedPath(entry: (Variable, PathExpression)) = copy(paths = paths + entry)
-    def withRewrittenVariable(entry: (Ref[LogicalVariable], PathExpression)) = {
+    def withProtectedVariable(ident: Ref[VarLike]) = copy(protectedVariables = protectedVariables + ident)
+    def withNamedPath(entry: (VarDeclare, PathExpression)) = copy(paths = paths + entry)
+    def withRewrittenVariable(entry: (Ref[VarLike], PathExpression)) = {
       val (ref, pathExpr) = entry
       copy(variableRewrites = variableRewrites + (ref -> pathExpr.endoRewrite(copyVariables)))
     }
@@ -45,7 +45,7 @@ case object projectNamedPaths extends Rewriter {
 
     def withVariableRewritesForExpression(expr: Expression) =
       expr.treeFold(self) {
-        case ident: Variable =>
+        case ident: VarDeclare =>
           acc =>
             acc.paths.get(ident) match {
               case Some(pathExpr) => (acc.withRewrittenVariable(Ref(ident) -> pathExpr), Some(identity))
@@ -62,7 +62,7 @@ case object projectNamedPaths extends Rewriter {
     val Projectibles(paths, protectedVariables, variableRewrites) = collectProjectibles(input)
     val applicator = Rewriter.lift {
 
-      case (ident: Variable) if !protectedVariables(Ref(ident)) =>
+      case (ident: VarLike) if !protectedVariables(Ref(ident)) =>
         variableRewrites.getOrElse(Ref(ident), ident)
 
       case namedPart@NamedPatternPart(_, _: ShortestPaths) =>
@@ -82,7 +82,7 @@ case object projectNamedPaths extends Rewriter {
       acc =>
         (acc.withProtectedVariable(Ref(aliased.variable)), Some(identity))
 
-    case ident: Variable =>
+    case ident: VarDeclare =>
       acc =>
         acc.paths.get(ident) match {
           case Some(pathExpr) => (acc.withRewrittenVariable(Ref(ident) -> pathExpr), Some(identity))
@@ -129,14 +129,14 @@ case object projectNamedPaths extends Rewriter {
   private def flip(element: PatternElement, step: PathStep): PathStep  = {
     element match {
       case NodePattern(node, _, _) =>
-        NodePathStep(node.get.copyId, step)
+        NodePathStep(node.get, step)
 
       case RelationshipChain(relChain, RelationshipPattern(rel, _, length, _, direction, _), _) => length match {
         case None =>
-          flip(relChain, SingleRelationshipPathStep(rel.get.copyId, direction, step))
+          flip(relChain, SingleRelationshipPathStep(rel.get, direction, step))
 
         case Some(_) =>
-          flip(relChain, MultiRelationshipPathStep(rel.get.copyId, direction, step))
+          flip(relChain, MultiRelationshipPathStep(rel.get, direction, step))
       }
     }
   }

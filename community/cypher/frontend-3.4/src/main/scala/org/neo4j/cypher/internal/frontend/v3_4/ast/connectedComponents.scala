@@ -16,7 +16,7 @@
  */
 package org.neo4j.cypher.internal.frontend.v3_4.ast
 
-import org.neo4j.cypher.internal.v3_4.expressions.{LogicalVariable, NodePattern, PatternPart}
+import org.neo4j.cypher.internal.v3_4.expressions.{LogicalVariable, NodePattern, PatternPart, VarLike}
 
 import scala.annotation.tailrec
 import scala.collection.immutable
@@ -26,7 +26,7 @@ import scala.collection.immutable
  */
 object connectedComponents {
 
-  type ComponentPart = Set[LogicalVariable]
+  type ComponentPart = Set[VarLike]
   type ConnectedComponent = Set[ComponentPart]
 
   //enable using the companion objects of the type aliases,
@@ -35,7 +35,7 @@ object connectedComponents {
   val ConnectedComponent = Set
 
   def apply(patternParts: Seq[PatternPart]): IndexedSeq[ConnectedComponent] = {
-    val parts: immutable.IndexedSeq[ComponentPart] = patternParts.map(_.fold(Set.empty[LogicalVariable]) {
+    val parts: immutable.IndexedSeq[ComponentPart] = patternParts.map(_.fold(Set.empty[VarLike]) {
       case NodePattern(Some(id), _, _) => list => list + id
     }).toIndexedSeq
 
@@ -64,6 +64,6 @@ object connectedComponents {
 
     def connectedTo(part: ComponentPart) = connectedComponent.exists(c => (c intersect part).nonEmpty)
 
-    def variables: Set[LogicalVariable] = connectedComponent.flatten
+    def variables: Set[VarLike] = connectedComponent.flatten
   }
 }

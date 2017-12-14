@@ -167,37 +167,37 @@ trait SemanticAnalysisTooling {
       case e:java.lang.NumberFormatException => false
     }
 
-  def ensureDefined(v:LogicalVariable): (SemanticState) => Either[SemanticError, SemanticState] =
+  def ensureDefined(v:VarLike): (SemanticState) => Either[SemanticError, SemanticState] =
     (_: SemanticState).ensureVariableDefined(v)
 
-  def declareVariable(v:LogicalVariable, possibleTypes: TypeSpec): (SemanticState) => Either[SemanticError, SemanticState] =
+  def declareVariable(v:VarLike, possibleTypes: TypeSpec): (SemanticState) => Either[SemanticError, SemanticState] =
     (_: SemanticState).declareVariable(v, possibleTypes)
 
   def declareVariable(
-                       v:LogicalVariable,
+                       v:VarLike,
                        typeGen: TypeGenerator,
                        positions: Set[InputPosition] = Set.empty
                      ): (SemanticState) => Either[SemanticError, SemanticState] =
     (s: SemanticState) => s.declareVariable(v, typeGen(s), positions)
 
-  def implicitVariable(v:LogicalVariable, possibleType: CypherType): (SemanticState) => Either[SemanticError, SemanticState] =
+  def implicitVariable(v:VarLike, possibleType: CypherType): (SemanticState) => Either[SemanticError, SemanticState] =
     (_: SemanticState).implicitVariable(v, possibleType)
 
-  def declareGraph(v:Variable): (SemanticState) => Either[SemanticError, SemanticState] =
+  def declareGraph(v:VarLike): (SemanticState) => Either[SemanticError, SemanticState] =
     (_: SemanticState).declareGraph(v)
 
-  def declareGraphMarkedAsGenerated(v:Variable): SemanticCheck = {
+  def declareGraphMarkedAsGenerated(v:VarLike): SemanticCheck = {
     val declare = (_: SemanticState).declareGraph(v)
     val mark = (_: SemanticState).localMarkAsGenerated(v)
     declare chain mark
   }
 
-  def implicitGraph(v:Variable): (SemanticState) => Either[SemanticError, SemanticState] =
+  def implicitGraph(v:VarLike): (SemanticState) => Either[SemanticError, SemanticState] =
     (_: SemanticState).implicitGraph(v)
 
-  def ensureGraphDefined(v:Variable): SemanticCheck = {
+  def ensureGraphDefined(v:VarLike): SemanticCheck = {
     val ensured = (_: SemanticState).ensureGraphDefined(v)
-    ensured chain expectType(CTGraphRef.covariant, v)
+    ensured chain expectType(CTGraphRef.covariant, v.load)
   }
 
   def requireMultigraphSupport(msg: String, position: InputPosition): SemanticCheck =

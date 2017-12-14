@@ -20,6 +20,14 @@ import org.neo4j.cypher.internal.util.v3_4._
 import org.neo4j.cypher.internal.frontend.v3_4.ast._
 import org.neo4j.cypher.internal.v3_4.expressions._
 
+/**
+  * This rewriter adds uniqueness predicates to pattern matches which are solved by multiple operators. This is
+  * needed because these operators do not guarantee path uniqueness over the full path otherwise, but only within
+  * their area of operation.
+  *
+  * One quirk of the current rewriting is that var-length patterns require list predicates, and on generating these
+  * the inner variable is named the same as the relationship list itself.
+  */
 case object addUniquenessPredicates extends Rewriter {
 
   def apply(that: AnyRef): AnyRef = instance(that)
@@ -68,27 +76,39 @@ case object addUniquenessPredicates extends Rewriter {
       x <- uniqueRels
       y <- uniqueRels if x.name < y.name && !x.isAlwaysDifferentFrom(y)
     } yield {
-      val equals = Equals(x.variable.copyId, y.variable.copyId)(pos)
+      val equals = Equals(x.load, y.load)(pos)
 
       (x.singleLength, y.singleLength) match {
+        // MATCH (a)-[r1]->(b)-[r2]->(c)
+        // MATCH (a)-[r1]->(b)-[r2]->(c) WHERE not(r1 = r2)
         case (true, true) =>
           Not(equals)(pos)
 
+        // MATCH (a)-[r1]->(b)-[r2*0..1]->(c)   ->
+        // MATCH (a)-[r1]->(b)-[r2*0..1]->(c) WHERE NONE(r2 IN r2 WHERE r1 = r2)
         case (true, false) =>
-          NoneIterablePredicate(y.variable.copyId, y.variable.copyId, Some(equals))(pos)
+          NoneIterablePredicate(y.declare, y.load, Some(equals))(pos)
 
+        // MATCH (a)-[r1*0..1]->(b)-[r2]->(c),
+        // MATCH (a)-[r1*0..1]->(b)-[r2]->(c) WHERE NONE(r1 IN r1 WHERE r1 = r2)
         case (false, true) =>
-          NoneIterablePredicate(x.variable.copyId, x.variable.copyId, Some(equals))(pos)
+          NoneIterablePredicate(x.declare, x.load, Some(equals))(pos)
 
+        // MATCH (a)-[r1*0..1]->(b)-[r2*0..1]->(c)
+        // MATCH (a)-[r1*0..1]->(b)-[r2*0..1]->(c) WHERE NONE(r1 IN r1 WHERE ANY(r2 IN r2 WHERE r1 = r2))
         case (false, false) =>
-          NoneIterablePredicate(x.variable.copyId, x.variable.copyId, Some(AnyIterablePredicate(y.variable.copyId, y.variable.copyId, Some(equals))(pos)))(pos)
+          NoneIterablePredicate(x.declare, x.load, Some(AnyIterablePredicate(y.declare, y.load, Some(equals))(pos)))(pos)
       }
     }
 
-  case class UniqueRel(variable: LogicalVariable, types: Set[RelTypeName], singleLength: Boolean) {
+  case class UniqueRel(variable: VarLike, types: Set[RelTypeName], singleLength: Boolean) {
     def name = variable.name
 
     def isAlwaysDifferentFrom(other: UniqueRel) =
       types.nonEmpty && other.types.nonEmpty && (types intersect other.types).isEmpty
+
+    def load = VarLoad.of(variable)
+
+    def declare = VarDeclare.of(variable)
   }
 }

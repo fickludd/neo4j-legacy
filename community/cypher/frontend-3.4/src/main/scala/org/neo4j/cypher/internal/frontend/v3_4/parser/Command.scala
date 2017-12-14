@@ -42,7 +42,7 @@ trait Command extends Parser
   )
 
   def PropertyExpressions: Rule1[Seq[exp.Property]] = rule("multiple property expressions") {
-    oneOrMore(WS ~ Variable ~ PropertyLookup, separator = CommaSep)
+    oneOrMore(WS ~ VariableLoad ~ PropertyLookup, separator = CommaSep)
   }
 
   def CreateIndex: Rule1[ast.CreateIndex] = rule {
@@ -101,24 +101,29 @@ trait Command extends Parser
     ) ~~> (_.toIndexedSeq))
   }
 
-  private def NodeKeyConstraintSyntax: Rule3[exp.Variable, exp.LabelName, Seq[exp.Property]] = keyword("CONSTRAINT ON") ~~ "(" ~~ Variable ~~ NodeLabel ~~ ")" ~~
-    keyword("ASSERT") ~~ "(" ~~ PropertyExpressions ~~ ")" ~~ keyword("IS NODE KEY")
+  private def NodeKeyConstraintSyntax: Rule3[exp.VarDeclare, exp.LabelName, Seq[exp.Property]] =
+    keyword("CONSTRAINT ON") ~~ "(" ~~ VariableDeclare ~~ NodeLabel ~~ ")" ~~
+      keyword("ASSERT") ~~ "(" ~~ PropertyExpressions ~~ ")" ~~ keyword("IS NODE KEY")
 
-  private def UniqueConstraintSyntax: Rule3[exp.Variable, exp.LabelName, exp.Property] = keyword("CONSTRAINT ON") ~~ "(" ~~ Variable ~~ NodeLabel ~~ ")" ~~
-    keyword("ASSERT") ~~ PropertyExpression ~~ keyword("IS UNIQUE")
+  private def UniqueConstraintSyntax: Rule3[exp.VarDeclare, exp.LabelName, exp.Property] =
+    keyword("CONSTRAINT ON") ~~ "(" ~~ VariableDeclare ~~ NodeLabel ~~ ")" ~~
+      keyword("ASSERT") ~~ PropertyExpression ~~ keyword("IS UNIQUE")
 
-  private def UniqueCompositeConstraintSyntax: Rule3[exp.Variable, exp.LabelName, Seq[exp.Property]] = keyword("CONSTRAINT ON") ~~ "(" ~~ Variable ~~ NodeLabel ~~ ")" ~~
-    keyword("ASSERT") ~~ "(" ~~ PropertyExpressions ~~ ")" ~~ keyword("IS UNIQUE")
+  private def UniqueCompositeConstraintSyntax: Rule3[exp.VarDeclare, exp.LabelName, Seq[exp.Property]] =
+    keyword("CONSTRAINT ON") ~~ "(" ~~ VariableDeclare ~~ NodeLabel ~~ ")" ~~
+      keyword("ASSERT") ~~ "(" ~~ PropertyExpressions ~~ ")" ~~ keyword("IS UNIQUE")
 
-  private def NodePropertyExistenceConstraintSyntax = keyword("CONSTRAINT ON") ~~ "(" ~~ Variable ~~ NodeLabel ~~ ")" ~~
-    keyword("ASSERT EXISTS") ~~ "(" ~~ PropertyExpression ~~ ")"
+  private def NodePropertyExistenceConstraintSyntax =
+    keyword("CONSTRAINT ON") ~~ "(" ~~ VariableDeclare ~~ NodeLabel ~~ ")" ~~
+      keyword("ASSERT EXISTS") ~~ "(" ~~ PropertyExpression ~~ ")"
 
-  private def RelationshipPropertyExistenceConstraintSyntax = keyword("CONSTRAINT ON") ~~ RelationshipPatternSyntax ~~
-    keyword("ASSERT EXISTS") ~~ "(" ~~ PropertyExpression ~~ ")"
+  private def RelationshipPropertyExistenceConstraintSyntax =
+    keyword("CONSTRAINT ON") ~~ RelationshipPatternSyntax ~~
+      keyword("ASSERT EXISTS") ~~ "(" ~~ PropertyExpression ~~ ")"
 
   private def RelationshipPatternSyntax = rule(
-    ("()-[" ~~ Variable~~ RelType ~~ "]-()")
-      | ("()-[" ~~ Variable~~ RelType ~~ "]->()")
-      | ("()<-[" ~~ Variable~~ RelType ~~ "]-()")
+    ("()-[" ~~ VariableDeclare ~~ RelType ~~ "]-()")
+      | ("()-[" ~~ VariableDeclare ~~ RelType ~~ "]->()")
+      | ("()<-[" ~~ VariableDeclare ~~ RelType ~~ "]-()")
   )
 }

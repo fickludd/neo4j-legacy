@@ -40,7 +40,7 @@ trait Patterns extends Parser
   }
 
   def PatternPart: Rule1[ast.PatternPart] = rule("a pattern") (
-      group(Variable ~~ operator("=") ~~ AnonymousPatternPart) ~~>> (ast.NamedPatternPart(_, _))
+      group(VariableDeclare ~~ operator("=") ~~ AnonymousPatternPart) ~~>> (ast.NamedPatternPart(_, _))
     | AnonymousPatternPart
   )
 
@@ -78,7 +78,7 @@ trait Patterns extends Parser
   }
 
   private def RelationshipDetail: Rule4[
-      Option[ast.Variable],
+      Option[ast.VarAmbiguous],
       MaybeLegacyRelTypes,
       Option[Option[ast.Range]],
       Option[ast.Expression]] = rule("[") {
@@ -114,11 +114,11 @@ trait Patterns extends Parser
 
   private def NodePattern: Rule1[ast.NodePattern] = rule("a node pattern") (
       group("(" ~~ MaybeVariable ~ MaybeNodeLabels ~ MaybeProperties ~~ ")") ~~>> (ast.NodePattern(_, _, _))
-    | group(Variable ~ MaybeNodeLabels ~ MaybeProperties)  ~~>> (ast.InvalidNodePattern(_, _, _)) // Here to give nice error messages
+    | group(VariableAmbiguous ~ MaybeNodeLabels ~ MaybeProperties)  ~~>> (ast.InvalidNodePattern(_, _, _)) // Here to give nice error messages
   )
 
-  private def MaybeVariable: Rule1[Option[ast.Variable]] = rule("a variable") {
-    optional(Variable)
+  private def MaybeVariable: Rule1[Option[ast.VarAmbiguous]] = rule("a variable") {
+    optional(VariableAmbiguous)
   }
 
   private def MaybeNodeLabels: Rule1[Seq[ast.LabelName]] = rule("node labels") (

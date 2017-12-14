@@ -16,7 +16,7 @@
  */
 package org.neo4j.cypher.internal.v3_4.expressions
 
-import org.neo4j.cypher.internal.util.v3_4.InputPosition
+import org.neo4j.cypher.internal.util.v3_4.{ASTNode, InputPosition}
 
 case class Variable(name: String)(val position: InputPosition) extends LogicalVariable {
 
@@ -30,8 +30,44 @@ case class Variable(name: String)(val position: InputPosition) extends LogicalVa
 }
 
 object Variable {
-  implicit val byName: Ordering[Variable] =
-    Ordering.by { (variable: Variable) =>
+  implicit val byName: Ordering[VarLike] =
+    Ordering.by { (variable: VarLike) =>
       (variable.name, variable.position)
     }(Ordering.Tuple2(implicitly[Ordering[String]], InputPosition.byOffset))
+}
+
+object VarDeclare {
+  def of(v: VarLike): VarDeclare = VarDeclare(v.name)(v.position)
+}
+
+case class VarDeclare(name: String)(val position: InputPosition) extends ASTNode with VarLike {
+
+}
+
+object VarLoad {
+  def of(v: VarLike): VarLoad = VarLoad(v.name)(v.position)
+}
+
+case class VarLoad(name: String)(val position: InputPosition) extends LogicalVariable with VarLike {
+
+  override def copyId = copy()(position)
+
+  override def renameId(newName: String) = copy(name = newName)(position)
+
+  override def bumpId = copy()(position.bumped())
+
+  override def asCanonicalStringVal: String = name
+}
+
+case class VarAmbiguous(name: String)(val position: InputPosition) extends ASTNode with VarLike {
+
+}
+
+trait VarLike {
+  def name: String
+  def position: InputPosition
+
+  def load: VarLoad = VarLoad(name)(position)
+
+  def declare: VarDeclare = VarDeclare(name)(position)
 }

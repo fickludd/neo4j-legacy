@@ -223,7 +223,7 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
             ctx match {
               case SemanticContext.Expression =>
                 ensureDefined(variable) chain
-                  expectType(CTNode.covariant, variable)
+                  expectType(CTNode.covariant, variable.load)
               case _                          =>
                 implicitVariable(variable, CTNode)
             }
@@ -240,7 +240,7 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
             implicitVariable(variable, possibleType)
           case SemanticContext.Expression =>
             ensureDefined(variable) chain
-              expectType(possibleType.covariant, variable)
+              expectType(possibleType.covariant, variable.load)
           case _ =>
             declareVariable(variable, possibleType)
         }

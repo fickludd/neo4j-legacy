@@ -40,10 +40,10 @@ object Pattern {
     }
   }
 
-  object findDuplicateRelationships extends (Pattern => Set[Seq[LogicalVariable]]) {
+  object findDuplicateRelationships extends (Pattern => Set[Seq[VarLike]]) {
 
-    def apply(pattern: Pattern): Set[Seq[LogicalVariable]] = {
-      val (seen, duplicates) = pattern.fold((Set.empty[LogicalVariable], Seq.empty[LogicalVariable])) {
+    def apply(pattern: Pattern): Set[Seq[VarLike]] = {
+      val (seen, duplicates) = pattern.fold((Set.empty[VarLike], Seq.empty[VarLike])) {
         case RelationshipChain(_, RelationshipPattern(Some(rel), _, None, _, _, _), _) =>
           (acc) =>
             val (seen, duplicates) = acc
@@ -57,10 +57,10 @@ object Pattern {
           identity
       }
 
-      val m0: Map[String, Seq[LogicalVariable]] = duplicates.groupBy(_.name)
+      val m0: Map[String, Seq[VarLike]] = duplicates.groupBy(_.name)
 
       val resultMap = seen.foldLeft(m0) {
-        case (m, ident @ Variable(name)) if m.contains(name) => m.updated(name, Seq(ident) ++ m(name))
+        case (m, ident @ VarAmbiguous(name)) if m.contains(name) => m.updated(name, Seq(ident) ++ m(name))
         case (m, _)                                            => m
       }
 
@@ -84,7 +84,9 @@ sealed abstract class PatternPart extends ASTNode {
   def element: PatternElement
 }
 
-case class NamedPatternPart(variable: Variable, patternPart: AnonymousPatternPart)(val position: InputPosition) extends PatternPart {
+case class NamedPatternPart(variable: VarDeclare,
+                            patternPart: AnonymousPatternPart)
+                           (val position: InputPosition) extends PatternPart {
   def element: PatternElement = patternPart.element
 }
 
@@ -104,8 +106,8 @@ case class ShortestPaths(element: PatternElement, single: Boolean)(val position:
 }
 
 sealed abstract class PatternElement extends ASTNode {
-  def allVariables: Set[LogicalVariable]
-  def variable: Option[LogicalVariable]
+  def allVariables: Set[VarLike]
+  def variable: Option[VarLike]
 
   def isSingleNode = false
 }
@@ -117,19 +119,27 @@ case class RelationshipChain(
                             )(val position: InputPosition)
   extends PatternElement {
 
-  def variable: Option[LogicalVariable] = relationship.variable
+  if (relationship.variable.exists(_.name == "  UNNAMED1")) {
+    println("gotcha")
+  }
 
-  override def allVariables: Set[LogicalVariable] = element.allVariables ++ relationship.variable ++ rightNode.variable
+  if (position.offset == 0) {
+    println("gotcha")
+  }
+
+  override def variable: Option[VarLike] = relationship.variable
+
+  override def allVariables: Set[VarLike] = element.allVariables ++ relationship.variable ++ rightNode.variable
 
 }
 
 object InvalidNodePattern {
-  def apply(id: Variable, labels: Seq[LabelName], properties: Option[Expression])(position: InputPosition) =
+  def apply(id: VarAmbiguous, labels: Seq[LabelName], properties: Option[Expression])(position: InputPosition) =
     new InvalidNodePattern(id)(position)
 }
 
 class InvalidNodePattern(
-                          val id: LogicalVariable
+                          val id: VarAmbiguous
                         )(
                           position: InputPosition
 ) extends NodePattern(Some(id), Seq.empty, None)(position) {
@@ -145,22 +155,26 @@ class InvalidNodePattern(
 
   override def hashCode(): Int = 31 * id.hashCode()
 
-  override def allVariables: Set[LogicalVariable] = Set.empty
+  override def allVariables: Set[VarLike] = Set.empty
 }
 
-case class NodePattern(variable: Option[LogicalVariable],
+case class NodePattern(variable: Option[VarLike],
                        labels: Seq[LabelName],
                        properties: Option[Expression])(val position: InputPosition)
   extends PatternElement {
 
-  override def allVariables: Set[LogicalVariable] = variable.toSet
+  if (position.offset == 0) {
+    println("gotcha")
+  }
+
+  override def allVariables: Set[VarLike] = variable.toSet
 
   override def isSingleNode = true
 }
 
 
 case class RelationshipPattern(
-                                variable: Option[LogicalVariable],
+                                variable: Option[VarLike],
                                 types: Seq[RelTypeName],
                                 length: Option[Option[Range]],
                                 properties: Option[Expression],

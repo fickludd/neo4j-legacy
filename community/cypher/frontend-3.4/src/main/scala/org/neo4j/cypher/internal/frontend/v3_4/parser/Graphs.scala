@@ -28,15 +28,15 @@ trait Graphs
     ((Parameter ~~> (Left(_))) | (StringLiteral ~~> (Right(_)))) ~~>> (ast.GraphUrl(_))
   }
 
-  def GraphRef: Rule1[exp.Variable] = !ReservedClauseStartKeyword ~~ Variable
+  def GraphRef: Rule1[exp.VarLike] = !ReservedClauseStartKeyword ~~ VariableAmbiguous
 
-  def GraphRefList: Rule1[List[exp.Variable]] =
+  def GraphRefList: Rule1[List[exp.VarLike]] =
     oneOrMore(GraphRef, separator = CommaSep)
 
-  private def AsGraph: Rule1[exp.Variable] =
+  private def AsGraph: Rule1[exp.VarLike] =
     keyword("AS") ~~ GraphRef
 
-  private def GraphAlias: Rule2[exp.Variable, Option[exp.Variable]] = rule("<graph-ref> AS <name>") {
+  private def GraphAlias: Rule2[exp.VarLike, Option[exp.VarLike]] = rule("<graph-ref> AS <name>") {
     GraphRef ~~ optional(AsGraph)
   }
 
@@ -61,11 +61,11 @@ trait Graphs
   }
 
   private def GraphOfShorthand: Rule1[ast.SingleGraphAs] =
-    keyword("GRAPH") ~~ GraphRef ~~ keyword("OF") ~~ Pattern ~~>> { (ref: exp.Variable, of: exp.Pattern) => ast
+    keyword("GRAPH") ~~ GraphRef ~~ keyword("OF") ~~ Pattern ~~>> { (ref: exp.VarLike, of: exp.Pattern) => ast
       .GraphOfAs(of, Some(ref)) }
 
   private def GraphAtShorthand: Rule1[ast.SingleGraphAs] =
-    keyword("GRAPH") ~~ GraphRef ~~ keyword("AT") ~~ GraphUrl ~~>> { (ref: exp.Variable, url: ast.GraphUrl) => ast
+    keyword("GRAPH") ~~ GraphRef ~~ keyword("AT") ~~ GraphUrl ~~>> { (ref: exp.VarLike, url: ast.GraphUrl) => ast
       .GraphAtAs(url, Some(ref)) }
 
   private def GraphShorthand = GraphOfShorthand | GraphAtShorthand

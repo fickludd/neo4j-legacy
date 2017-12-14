@@ -160,7 +160,8 @@ trait Expressions extends Parser
     | group("[" ~~ zeroOrMore(Expression, separator = CommaSep) ~~ "]") ~~>> (ast.ListLiteral(_))
     | group(keyword("FILTER") ~~ "(" ~~ FilterExpression ~~ ")") ~~>> (ast.FilterExpression(_, _, _))
     | group(keyword("EXTRACT") ~~ "(" ~~ FilterExpression ~ optional(WS ~ "|" ~~ Expression) ~~ ")") ~~>> (ast.ExtractExpression(_, _, _, _))
-    | group(keyword("REDUCE") ~~ "(" ~~ Variable ~~ "=" ~~ Expression ~~ "," ~~ IdInColl ~~ "|" ~~ Expression ~~ ")") ~~>> (ast.ReduceExpression(_, _, _, _, _))
+    | group(keyword("REDUCE") ~~ "(" ~~ VariableDeclare ~~ "=" ~~ Expression ~~ "," ~~ IdInColl ~~ "|" ~~
+        Expression ~~ ")") ~~>> (ast.ReduceExpression(_, _, _, _, _))
     | group(keyword("ALL") ~~ "(" ~~ FilterExpression ~~ ")") ~~>> (ast.AllIterablePredicate(_, _, _))
     | group(keyword("ANY") ~~ "(" ~~ FilterExpression ~~ ")") ~~>> (ast.AnyIterablePredicate(_, _, _))
     | group(keyword("NONE") ~~ "(" ~~ FilterExpression ~~ ")") ~~>> (ast.NoneIterablePredicate(_, _, _))
@@ -169,7 +170,7 @@ trait Expressions extends Parser
     | RelationshipsPattern ~~> ast.PatternExpression
     | parenthesizedExpression
     | FunctionInvocation
-    | Variable
+    | VariableLoad
   )
 
   def parenthesizedExpression: Rule1[ast.Expression] = "(" ~~ Expression ~~ ")"
@@ -182,11 +183,11 @@ trait Expressions extends Parser
     operator(".") ~~ (PropertyKeyName ~~>> (ast.Property(_: ast.Expression, _)))
   }
 
-  private def FilterExpression: Rule3[ast.Variable, ast.Expression, Option[ast.Expression]] =
+  private def FilterExpression: Rule3[ast.VarDeclare, ast.Expression, Option[ast.Expression]] =
     IdInColl ~ optional(WS ~ keyword("WHERE") ~~ Expression)
 
-  private def IdInColl: Rule2[ast.Variable, ast.Expression] =
-    Variable ~~ keyword("IN") ~~ Expression
+  private def IdInColl: Rule2[ast.VarDeclare, ast.Expression] =
+    VariableDeclare ~~ keyword("IN") ~~ Expression
 
   def FunctionInvocation: Rule1[ast.FunctionInvocation] = rule("a function") {
     ((group(Namespace ~~ FunctionName ~~ "(" ~~
@@ -200,7 +201,8 @@ trait Expressions extends Parser
   }
 
   def PatternComprehension: Rule1[ast.PatternComprehension] = rule("[") {
-    group("[" ~~ optional(Variable ~~ operator("=")) ~~ RelationshipsPattern ~ optional(WS ~ keyword("WHERE") ~~ Expression) ~~ "|" ~~ Expression ~~ "]") ~~>> (ast.PatternComprehension(_, _, _, _))
+    group("[" ~~ optional(VariableDeclare ~~ operator("=")) ~~ RelationshipsPattern ~ optional(WS ~ keyword("WHERE") ~~
+      Expression) ~~ "|" ~~ Expression ~~ "]") ~~>> (ast.PatternComprehension(_, _, _, _))
   }
 
   def CaseExpression: Rule1[ast.CaseExpression] = rule("CASE") {

@@ -38,12 +38,13 @@ case class desugarMapProjection(state: SemanticState) extends Rewriter {
       def propertySelect(propertyPosition: InputPosition, name: String): LiteralEntry = {
         val key = PropertyKeyName(name)(propertyPosition)
         val idPos = definitionPos.getOrElse(throw new InternalException("MapProjection definition pos is not known"))
-        val newIdentifier = Variable(id.name)(idPos)
+//        val newIdentifier = Variable(id.name)(idPos)
+        val newIdentifier = id
         val value = Property(newIdentifier, key)(propertyPosition)
         LiteralEntry(key, value)(propertyPosition)
       }
 
-      def identifierSelect(id: Variable): LiteralEntry =
+      def identifierSelect(id: VarLoad): LiteralEntry =
         LiteralEntry(PropertyKeyName(id.name)(id.position), id)(id.position)
 
       var includeAllProps = false
@@ -51,8 +52,8 @@ case class desugarMapProjection(state: SemanticState) extends Rewriter {
       val mapExpressionItems = items.flatMap {
         case x: LiteralEntry => Some(x)
         case x: AllPropertiesSelector => includeAllProps = true; None
-        case PropertySelector(property: Variable) => Some(propertySelect(property.position, property.name))
-        case VariableSelector(identifier: Variable) => Some(identifierSelect(identifier))
+        case PropertySelector(property: VarLoad) => Some(propertySelect(property.position, property.name))
+        case VariableSelector(identifier: VarLoad) => Some(identifierSelect(identifier))
       }
 
       DesugaredMapProjection(id, mapExpressionItems, includeAllProps)(e.position)
@@ -60,7 +61,7 @@ case class desugarMapProjection(state: SemanticState) extends Rewriter {
 }
 
 case class DesugaredMapProjection(
-                                   name: LogicalVariable,
+                                   name: VarLoad,
                                    items: Seq[LiteralEntry],
                                    includeAllProps: Boolean
                                  )(val position: InputPosition) extends Expression
