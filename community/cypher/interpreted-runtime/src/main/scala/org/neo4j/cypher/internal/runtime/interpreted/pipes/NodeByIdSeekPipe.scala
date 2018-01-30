@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.runtime.interpreted.IsList
@@ -59,7 +60,7 @@ case class ManySeekArgs(coll: Expression) extends SeekArgs {
   override def registerOwningPipe(pipe: Pipe): Unit = coll.registerOwningPipe(pipe)
 }
 
-case class NodeByIdSeekPipe(ident: String, nodeIdsExpr: SeekArgs)
+case class NodeByIdSeekPipe(ident: String, nodeIdsExpr: SeekArgs, query:QueryState => QueryContext)
                            (val id: Id = Id.INVALID_ID) extends Pipe {
 
   nodeIdsExpr.registerOwningPipe(this)
@@ -71,7 +72,7 @@ case class NodeByIdSeekPipe(ident: String, nodeIdsExpr: SeekArgs)
       ident,
       ctx,
       executionContextFactory,
-      state.query.nodeOps,
+      query(state).nodeOps,
       nodeIds.iterator().asScala
     )
   }

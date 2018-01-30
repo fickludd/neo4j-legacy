@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
-import org.neo4j.cypher.internal.runtime.ProcedureCallMode
+import org.neo4j.cypher.internal.runtime.{ProcedureCallMode, QueryContext}
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.runtime.interpreted.ValueConversion
@@ -44,7 +44,8 @@ case class ProcedureCallPipe(source: Pipe,
                              argExprs: Seq[Expression],
                              rowProcessing: ProcedureCallRowProcessing,
                              resultSymbols: Seq[(String, CypherType)],
-                             resultIndices: Seq[(Int, String)])
+                             resultIndices: Seq[(Int, String)],
+                             query:QueryState => QueryContext)
                             (val id: Id = Id.INVALID_ID)
 
   extends PipeWithSource(source) {
@@ -60,7 +61,7 @@ case class ProcedureCallPipe(source: Pipe,
   override protected def internalCreateResults(input: Iterator[ExecutionContext], state: QueryState): Iterator[ExecutionContext] = rowProcessor(input, state)
 
   private def internalCreateResultsByAppending(input: Iterator[ExecutionContext], state: QueryState): Iterator[ExecutionContext] = {
-    val qtx = state.query
+    val qtx = query(state)
     val builder = Seq.newBuilder[(String, AnyValue)]
     builder.sizeHint(resultIndices.length)
     input flatMap { input =>

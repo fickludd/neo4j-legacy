@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.Predica
 import org.neo4j.cypher.internal.runtime.interpreted.pipes._
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.slotted.helpers.NullChecker.entityIsNull
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.slotted.helpers.SlottedPipeBuilderUtils.makeGetPrimitiveNodeFromSlotFunctionFor
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.cypher.internal.v3_4.expressions.SemanticDirection
@@ -38,7 +39,8 @@ case class OptionalExpandIntoSlottedPipe(source: Pipe,
                                          dir: SemanticDirection,
                                          lazyTypes: LazyTypes,
                                          predicate: Predicate,
-                                         slots: SlotConfiguration)
+                                         slots: SlotConfiguration,
+                                         query:QueryState => QueryContext)
                                         (val id: Id = Id.INVALID_ID)
   extends PipeWithSource(source) with PrimitiveCachingExpandInto {
   self =>
@@ -66,7 +68,7 @@ case class OptionalExpandIntoSlottedPipe(source: Pipe,
           Iterator(withNulls(inputRow))
         } else {
           val relationships: PrimitiveLongIterator = relCache.get(fromNode, toNode, dir)
-            .getOrElse(findRelationships(state.query, fromNode, toNode, relCache, dir, lazyTypes.types(state.query)))
+            .getOrElse(findRelationships(query(state), fromNode, toNode, relCache, dir, lazyTypes.types(query(state))))
 
           val matchIterator = PrimitiveLongHelper.map(relationships, relId => {
             val outputRow = SlottedExecutionContext(slots)

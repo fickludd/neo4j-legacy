@@ -19,20 +19,22 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.InternalException
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.cypher.internal.v3_4.expressions.SemanticDirection
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
-import org.neo4j.values.virtual.{RelationshipValue, NodeValue}
+import org.neo4j.values.virtual.{NodeValue, RelationshipValue}
 
 case class ExpandAllPipe(source: Pipe,
                          fromName: String,
                          relName: String,
                          toName: String,
                          dir: SemanticDirection,
-                         types: LazyTypes)
+                         types: LazyTypes,
+                         query: QueryState => QueryContext)
                         (val id: Id = Id.INVALID_ID) extends PipeWithSource(source) {
 
   protected def internalCreateResults(input: Iterator[ExecutionContext], state: QueryState): Iterator[ExecutionContext] = {
@@ -40,7 +42,7 @@ case class ExpandAllPipe(source: Pipe,
       row =>
         getFromNode(row) match {
           case n: NodeValue =>
-            val relationships: Iterator[RelationshipValue] = state.query.getRelationshipsForIds(n.id(), dir, types.types(state.query))
+            val relationships: Iterator[RelationshipValue] = query(state).getRelationshipsForIds(n.id(), dir, types.types(query(state)))
             relationships.map { r =>
                 val other = r.otherNode(n)
                 executionContextFactory.copyWith(row, relName, r, toName, other)

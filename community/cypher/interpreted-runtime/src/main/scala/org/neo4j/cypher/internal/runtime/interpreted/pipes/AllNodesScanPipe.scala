@@ -19,14 +19,15 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 
-case class AllNodesScanPipe(ident: String)(val id: Id = Id.INVALID_ID) extends Pipe {
+case class AllNodesScanPipe(ident: String, query: QueryState => QueryContext)(val id: Id = Id.INVALID_ID) extends Pipe {
 
   protected def internalCreateResults(state: QueryState): Iterator[ExecutionContext] = {
     val baseContext = state.createOrGetInitialContext(executionContextFactory)
-    state.query.nodeOps.all.map(n => executionContextFactory.copyWith(baseContext, ident, n))
+    query(state).nodeOps.all.map(n => executionContextFactory.copyWith(baseContext, ident, n))
   }
 
 }

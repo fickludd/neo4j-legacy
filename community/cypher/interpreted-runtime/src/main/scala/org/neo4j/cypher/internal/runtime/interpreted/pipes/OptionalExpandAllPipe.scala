@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.Predicate
 import org.neo4j.cypher.internal.util.v3_4.InternalException
@@ -29,7 +30,7 @@ import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.NodeValue
 
 case class OptionalExpandAllPipe(source: Pipe, fromName: String, relName: String, toName: String, dir: SemanticDirection,
-                                 types: LazyTypes, predicate: Predicate)
+                                 types: LazyTypes, predicate: Predicate, query:QueryState => QueryContext)
                                 (val id: Id = Id.INVALID_ID)
   extends PipeWithSource(source) {
 
@@ -41,7 +42,7 @@ case class OptionalExpandAllPipe(source: Pipe, fromName: String, relName: String
         val fromNode = getFromNode(row)
         fromNode match {
           case n: NodeValue =>
-            val relationships = state.query.getRelationshipsForIds(n.id(), dir, types.types(state.query))
+            val relationships = query(state).getRelationshipsForIds(n.id(), dir, types.types(query(state)))
             val matchIterator = relationships.map { r =>
                 val other = r.otherNode(n)
                 executionContextFactory.copyWith(row, relName, r, toName, other)

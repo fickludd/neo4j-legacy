@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.runtime.interpreted.CastSupport
 import org.neo4j.cypher.internal.runtime.interpreted.GraphElementPropertyFunctions
@@ -26,7 +27,7 @@ import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.VirtualNodeValue
 
-case class RemoveLabelsPipe(src: Pipe, variable: String, labels: Seq[LazyLabel])
+case class RemoveLabelsPipe(src: Pipe, variable: String, labels: Seq[LazyLabel], query:QueryState => QueryContext)
                            (val id: Id = Id.INVALID_ID)
   extends PipeWithSource(src) with GraphElementPropertyFunctions {
 
@@ -40,7 +41,7 @@ case class RemoveLabelsPipe(src: Pipe, variable: String, labels: Seq[LazyLabel])
   }
 
   private def removeLabels(context: ExecutionContext, state: QueryState, nodeId: Long) = {
-    val labelIds = labels.flatMap(_.getOptId(state.query)).map(_.id)
-    state.query.removeLabelsFromNode(nodeId, labelIds.iterator)
+    val labelIds = labels.flatMap(_.getOptId(query(state))).map(_.id)
+    query(state).removeLabelsFromNode(nodeId, labelIds.iterator)
   }
 }

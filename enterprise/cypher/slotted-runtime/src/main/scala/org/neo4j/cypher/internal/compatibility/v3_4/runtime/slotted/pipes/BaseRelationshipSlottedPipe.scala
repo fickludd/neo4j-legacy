@@ -40,7 +40,8 @@ abstract class BaseRelationshipSlottedPipe(src: Pipe,
                                            typ: LazyType,
                                            endNode: Slot,
                                            slots: SlotConfiguration,
-                                           properties: Option[Expression]) extends PipeWithSource(src) {
+                                           properties: Option[Expression],
+                                           query:QueryState => QueryContext) extends PipeWithSource(src) {
 
   //===========================================================================
   // Compile-time initializations
@@ -58,8 +59,8 @@ abstract class BaseRelationshipSlottedPipe(src: Pipe,
       row =>{
         val start = getStartNodeFunction(row)
         val end = getEndNodeFunction(row)
-        val typeId = typ.typ(state.query)
-        val relationship = state.query.createRelationship(start, end, typeId)
+        val typeId = typ.typ(query(state))
+        val relationship = query(state).createRelationship(start, end, typeId)
 
         relationship.`type`() // we do this to make sure the relationship is loaded from the store into this object
 
@@ -76,10 +77,10 @@ abstract class BaseRelationshipSlottedPipe(src: Pipe,
         case _: Node | _: Relationship =>
           throw new CypherTypeException("Parameter provided for relationship creation is not a Map")
         case IsMap(f) =>
-          val propertiesMap: MapValue = f(state.query)
+          val propertiesMap: MapValue = f(query(state))
           propertiesMap.foreach {
             new BiConsumer[String, AnyValue] {
-              override def accept(k: String, v: AnyValue): Unit = setProperty(relId, k, v, state.query)
+              override def accept(k: String, v: AnyValue): Unit = setProperty(relId, k, v, query(state))
             }
           }
         case _ =>
@@ -107,9 +108,10 @@ case class CreateRelationshipSlottedPipe(src: Pipe,
                                          typ: LazyType,
                                          endNode: Slot,
                                          slots: SlotConfiguration,
-                                         properties: Option[Expression])
+                                         properties: Option[Expression],
+                                         query:QueryState => QueryContext)
                                         (val id: Id = Id.INVALID_ID)
-  extends BaseRelationshipSlottedPipe(src, RelationshipKey, startNode, typ: LazyType, endNode, slots, properties) {
+  extends BaseRelationshipSlottedPipe(src, RelationshipKey, startNode, typ: LazyType, endNode, slots, properties, query) {
   override protected def handleNull(key: String) {
     //do nothing
   }
@@ -121,9 +123,10 @@ case class MergeCreateRelationshipSlottedPipe(src: Pipe,
                                               typ: LazyType,
                                               endNode: Slot,
                                               slots: SlotConfiguration,
-                                              properties: Option[Expression])
+                                              properties: Option[Expression],
+                                              query:QueryState => QueryContext)
                                              (val id: Id = Id.INVALID_ID)
-  extends BaseRelationshipSlottedPipe(src, RelationshipKey, startNode, typ: LazyType, endNode, slots, properties) {
+  extends BaseRelationshipSlottedPipe(src, RelationshipKey, startNode, typ: LazyType, endNode, slots, properties, query) {
 
   override protected def handleNull(key: String) {
     //merge cannot use null properties, since in that case the match part will not find the result of the create

@@ -32,7 +32,8 @@ case class NodeIndexSeekPipe(ident: String,
                              label: LabelToken,
                              propertyKeys: Seq[PropertyKeyToken],
                              valueExpr: QueryExpression[Expression],
-                             indexMode: IndexSeekMode = IndexSeek)
+                             indexMode: IndexSeekMode = IndexSeek,
+                             query:QueryState => QueryContext)
                             (val id: Id = Id.INVALID_ID) extends Pipe {
 
   private val propertyIds: Array[Int] = propertyKeys.map(_.nameId.id).toArray
@@ -51,7 +52,7 @@ case class NodeIndexSeekPipe(ident: String,
   valueExpr.expressions.foreach(_.registerOwningPipe(this))
 
   protected def internalCreateResults(state: QueryState): Iterator[ExecutionContext] = {
-    val index = indexFactory(state.query)(state)
+    val index = indexFactory(query(state))(state)
     val baseContext = state.createOrGetInitialContext(executionContextFactory)
     val resultNodes = indexQuery(valueExpr, baseContext, state, index, label.name, propertyKeys.map(_.name))
     resultNodes.map(node => executionContextFactory.copyWith(baseContext, ident, node))

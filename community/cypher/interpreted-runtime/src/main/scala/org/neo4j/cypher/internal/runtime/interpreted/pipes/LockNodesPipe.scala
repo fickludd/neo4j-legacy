@@ -31,7 +31,7 @@ case class LockNodesPipe(src: Pipe, variablesToLock: Set[String])(val id: Id = I
       val nodesToLock: Set[Long] = variablesToLock.flatMap { varName =>
         Option(ctx(varName).asInstanceOf[VirtualNodeValue]).map(_.id)
       }
-      state.query.lockNodes(nodesToLock.toSeq: _*)
+      state.activeQuery.lockNodes(nodesToLock.toSeq: _*)
       ctx
     }
 }

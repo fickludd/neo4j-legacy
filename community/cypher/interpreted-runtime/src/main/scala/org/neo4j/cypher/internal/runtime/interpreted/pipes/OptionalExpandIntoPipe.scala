@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.Predicate
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
@@ -29,7 +30,8 @@ import org.neo4j.values.virtual.NodeValue
 import scala.collection.mutable.ListBuffer
 
 case class OptionalExpandIntoPipe(source: Pipe, fromName: String, relName: String, toName: String,
-                                  dir: SemanticDirection, types: LazyTypes, predicate: Predicate)
+                                  dir: SemanticDirection, types: LazyTypes, predicate: Predicate,
+                                  query:QueryState => QueryContext)
                                  (val id: Id = Id.INVALID_ID)
   extends PipeWithSource(source) with CachingExpandInto {
   private final val CACHE_SIZE = 100000
@@ -49,7 +51,7 @@ case class OptionalExpandIntoPipe(source: Pipe, fromName: String, relName: Strin
               case Values.NO_VALUE => Iterator.single(row.set(relName, Values.NO_VALUE))
               case n: NodeValue =>
                 val relationships = relCache.get(fromNode, n, dir)
-                  .getOrElse(findRelationships(state.query, fromNode, n, relCache, dir, types.types(state.query)))
+                  .getOrElse(findRelationships(query(state), fromNode, n, relCache, dir, types.types(query(state))))
 
                 val it = relationships.toIterator
                 val filteredRows = ListBuffer.empty[ExecutionContext]

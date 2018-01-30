@@ -19,17 +19,18 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 
-case class NodeByLabelScanPipe(ident: String, label: LazyLabel)
+case class NodeByLabelScanPipe(ident: String, label: LazyLabel, query:QueryState => QueryContext)
                               (val id: Id = Id.INVALID_ID) extends Pipe  {
 
   protected def internalCreateResults(state: QueryState): Iterator[ExecutionContext] = {
 
-    label.getOptId(state.query) match {
+    label.getOptId(query(state)) match {
       case Some(labelId) =>
-        val nodes = state.query.getNodesByLabel(labelId.id)
+        val nodes = query(state).getNodesByLabel(labelId.id)
         val baseContext = state.createOrGetInitialContext(executionContextFactory)
         nodes.map(n => executionContextFactory.copyWith(baseContext, ident, n))
       case None =>

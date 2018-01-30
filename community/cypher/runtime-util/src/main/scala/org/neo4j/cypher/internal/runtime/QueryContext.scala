@@ -64,6 +64,10 @@ trait QueryContext extends TokenContext {
 
   def relationshipOps: Operations[RelationshipValue]
 
+  def activeReads(): Read
+
+  def stabilizeActiveTxState(): Unit
+
   def createNode(): Node
 
   def createNodeId(): Long
@@ -241,6 +245,10 @@ trait Operations[T] {
 trait QueryTransactionalContext extends CloseableResource {
 
   def cursors : CursorFactory
+
+  def stableDataRead: Read
+
+  def stabilizeActiveTxState(): Unit
 
   def dataRead: Read
 

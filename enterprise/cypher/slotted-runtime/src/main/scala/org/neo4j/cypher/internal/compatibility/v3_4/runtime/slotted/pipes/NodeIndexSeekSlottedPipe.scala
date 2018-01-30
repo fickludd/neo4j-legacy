@@ -37,7 +37,8 @@ case class NodeIndexSeekSlottedPipe(ident: String,
                                     valueExpr: QueryExpression[Expression],
                                     indexMode: IndexSeekMode = IndexSeek,
                                     slots: SlotConfiguration,
-                                    argumentSize: SlotConfiguration.Size)
+                                    argumentSize: SlotConfiguration.Size,
+                                    query:QueryState => QueryContext)
                                    (val id: Id = Id.INVALID_ID) extends Pipe {
 
   private val offset = slots.getLongOffsetFor(ident)
@@ -58,7 +59,7 @@ case class NodeIndexSeekSlottedPipe(ident: String,
   valueExpr.expressions.foreach(_.registerOwningPipe(this))
 
   protected def internalCreateResults(state: QueryState): Iterator[ExecutionContext] = {
-    val index = indexFactory(state.query)(state)
+    val index = indexFactory(query(state))(state)
     val baseContext = state.createOrGetInitialContext(executionContextFactory)
     val resultNodes = indexQuery(valueExpr, baseContext, state, index, label.name, propertyKeys.map(_.name))
     resultNodes.map { node =>

@@ -33,7 +33,8 @@ case class NodeIndexScanSlottedPipe(ident: String,
                                     label: LabelToken,
                                     propertyKey: PropertyKeyToken,
                                     slots: SlotConfiguration,
-                                    argumentSize: SlotConfiguration.Size)
+                                    argumentSize: SlotConfiguration.Size,
+                                    query:QueryState => QueryContext)
                                    (val id: Id = Id.INVALID_ID)
   extends Pipe {
 
@@ -49,7 +50,7 @@ case class NodeIndexScanSlottedPipe(ident: String,
   }
 
   protected def internalCreateResults(state: QueryState): Iterator[ExecutionContext] = {
-    val nodes = state.query.indexScanPrimitive(reference(state.query))
+    val nodes = query(state).indexScanPrimitive(reference(query(state)))
     PrimitiveLongHelper.map(nodes, { node =>
       val context = SlottedExecutionContext(slots)
       state.copyArgumentStateTo(context, argumentSize.nLongs, argumentSize.nReferences)

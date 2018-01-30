@@ -32,7 +32,8 @@ import org.neo4j.values.virtual.NodeValue
 abstract class AbstractNodeIndexStringScanPipe(ident: String,
                                                label: LabelToken,
                                                propertyKey: PropertyKeyToken,
-                                               valueExpr: Expression) extends Pipe {
+                                               valueExpr: Expression,
+                                               query:QueryState => QueryContext) extends Pipe {
 
 
   private var reference: IndexReference = CapableIndexReference.NO_INDEX
@@ -52,7 +53,7 @@ abstract class AbstractNodeIndexStringScanPipe(ident: String,
 
     val resultNodes = value match {
       case value: TextValue =>
-        queryContextCall(state, reference(state.query), value.stringValue()).
+        queryContextCall(state, reference(query(state)), value.stringValue()).
           map(node => executionContextFactory.copyWith(baseContext, ident, node))
       case Values.NO_VALUE =>
         Iterator.empty
@@ -69,21 +70,23 @@ abstract class AbstractNodeIndexStringScanPipe(ident: String,
 case class NodeIndexContainsScanPipe(ident: String,
                                      label: LabelToken,
                                      propertyKey: PropertyKeyToken,
-                                     valueExpr: Expression)
+                                     valueExpr: Expression,
+                                     query:QueryState => QueryContext)
                                     (val id: Id = Id.INVALID_ID)
-  extends AbstractNodeIndexStringScanPipe(ident, label, propertyKey, valueExpr) {
+  extends AbstractNodeIndexStringScanPipe(ident, label, propertyKey, valueExpr, query) {
 
   override protected def queryContextCall(state: QueryState, indexReference: IndexReference, value: String) =
-    state.query.indexScanByContains(indexReference, value)
+    query(state).indexScanByContains(indexReference, value)
 }
 
 case class NodeIndexEndsWithScanPipe(ident: String,
                                      label: LabelToken,
                                      propertyKey: PropertyKeyToken,
-                                     valueExpr: Expression)
+                                     valueExpr: Expression,
+                                     query:QueryState => QueryContext)
                                     (val id: Id = Id.INVALID_ID)
-  extends AbstractNodeIndexStringScanPipe(ident, label, propertyKey, valueExpr) {
+  extends AbstractNodeIndexStringScanPipe(ident, label, propertyKey, valueExpr, query) {
 
   override protected def queryContextCall(state: QueryState, indexReference: IndexReference, value: String) =
-    state.query.indexScanByEndsWith(indexReference, value)
+    query(state).indexScanByEndsWith(indexReference, value)
 }

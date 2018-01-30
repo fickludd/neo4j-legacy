@@ -23,6 +23,7 @@ import org.neo4j.cypher.internal.compatibility.v3_4.runtime.{Slot, SlotConfigura
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.slotted.SlottedExecutionContext
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.slotted.helpers.NullChecker.entityIsNull
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.slotted.helpers.SlottedPipeBuilderUtils.makeGetPrimitiveNodeFromSlotFunctionFor
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.Predicate
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.{LazyTypes, Pipe, PipeWithSource, QueryState}
@@ -52,7 +53,8 @@ case class VarLengthExpandSlottedPipe(source: Pipe,
                                       tempEdgeOffset: Int,
                                       nodePredicate: Predicate,
                                       edgePredicate: Predicate,
-                                      argumentSize: SlotConfiguration.Size)
+                                      argumentSize: SlotConfiguration.Size,
+                                      query:QueryState => QueryContext)
                                      (val id: Id = Id.INVALID_ID) extends PipeWithSource(source) {
   type LNode = Long
 
@@ -79,14 +81,14 @@ case class VarLengthExpandSlottedPipe(source: Pipe,
       override def next(): (LNode, Seq[RelationshipValue]) = {
         val (fromNode, rels) = stack.pop()
         if (rels.length < maxDepth.getOrElse(Int.MaxValue)) {
-          val relationships: RelationshipIterator = state.query.getRelationshipsForIdsPrimitive(fromNode, dir, types.types(state.query))
+          val relationships: RelationshipIterator = query(state).getRelationshipsForIdsPrimitive(fromNode, dir, types.types(query(state)))
 
           var relationship: RelationshipValue = null
 
           val relVisitor = new RelationshipVisitor[InternalException] {
             override def visit(relationshipId: Long, typeId: Int, startNodeId: LNode, endNodeId: LNode): Unit = {
 
-              relationship = state.query.getRelationshipFor(relationshipId, typeId, startNodeId, endNodeId)
+              relationship = query(state).getRelationshipFor(relationshipId, typeId, startNodeId, endNodeId)
             }
           }
 

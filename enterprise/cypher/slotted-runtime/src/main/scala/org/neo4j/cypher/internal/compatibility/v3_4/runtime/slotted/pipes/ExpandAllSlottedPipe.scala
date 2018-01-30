@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.compatibility.v3_4.runtime.slotted.SlottedExecu
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.slotted.helpers.NullChecker
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.slotted.helpers.SlottedPipeBuilderUtils.makeGetPrimitiveNodeFromSlotFunctionFor
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.{Slot, SlotConfiguration}
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.runtime.interpreted.pipes._
 import org.neo4j.cypher.internal.util.v3_4.InternalException
@@ -38,7 +39,8 @@ case class ExpandAllSlottedPipe(source: Pipe,
                                 toOffset: Int,
                                 dir: SemanticDirection,
                                 types: LazyTypes,
-                                slots: SlotConfiguration)
+                                slots: SlotConfiguration,
+                                query:QueryState => QueryContext)
                                (val id: Id = Id.INVALID_ID) extends PipeWithSource(source) with Pipe {
 
   //===========================================================================
@@ -57,7 +59,7 @@ case class ExpandAllSlottedPipe(source: Pipe,
         if (NullChecker.entityIsNull(fromNode))
           Iterator.empty
         else {
-          val relationships: RelationshipIterator = state.query.getRelationshipsForIdsPrimitive(fromNode, dir, types.types(state.query))
+          val relationships: RelationshipIterator = query(state).getRelationshipsForIdsPrimitive(fromNode, dir, types.types(query(state)))
           var otherSide: Long = 0
 
           val relVisitor = new RelationshipVisitor[InternalException] {

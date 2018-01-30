@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
 import org.neo4j.cypher.InternalException
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.cypher.internal.v3_4.expressions.SemanticDirection
@@ -40,7 +41,8 @@ case class ExpandIntoPipe(source: Pipe,
                           relName: String,
                           toName: String,
                           dir: SemanticDirection,
-                          lazyTypes: LazyTypes)
+                          lazyTypes: LazyTypes,
+                          query: QueryState => QueryContext)
                           (val id: Id = Id.INVALID_ID)
   extends PipeWithSource(source) with CachingExpandInto {
   self =>
@@ -61,7 +63,7 @@ case class ExpandIntoPipe(source: Pipe,
               case n: NodeValue =>
 
                 val relationships = relCache.get(fromNode, n, dir)
-                  .getOrElse(findRelationships(state.query, fromNode, n, relCache, dir, lazyTypes.types(state.query)))
+                  .getOrElse(findRelationships(query(state), fromNode, n, relCache, dir, lazyTypes.types(query(state))))
 
                 if (relationships.isEmpty) Iterator.empty
                 else relationships.map(r => executionContextFactory.copyWith(row, relName, r))

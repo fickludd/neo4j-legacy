@@ -40,8 +40,8 @@ abstract class BaseRelationshipPipe(src: Pipe, key: String, startNode: String, t
   private def createRelationship(context: ExecutionContext, state: QueryState): ExecutionContext = {
     val start = getNode(context, startNode)
     val end = getNode(context, endNode)
-    val typeId = typ.typ(state.query)
-    val relationship = state.query.createRelationship(start.id(), end.id(), typeId)
+    val typeId = typ.typ(state.activeQuery)
+    val relationship = state.activeQuery.createRelationship(start.id(), end.id(), typeId)
     relationship.`type`() // we do this to make sure the relationship is loaded from the store into this object
     setProperties(context, state, relationship.id())
     context += key -> relationship
@@ -59,8 +59,8 @@ abstract class BaseRelationshipPipe(src: Pipe, key: String, startNode: String, t
         case _: NodeValue | _: RelationshipValue =>
           throw new CypherTypeException("Parameter provided for relationship creation is not a Map")
         case IsMap(map) =>
-          map(state.query).foreach(new BiConsumer[String, AnyValue] {
-            override def accept(k: String, v: AnyValue): Unit = setProperty(relId, k, v, state.query)
+          map(state.activeQuery).foreach(new BiConsumer[String, AnyValue] {
+            override def accept(k: String, v: AnyValue): Unit = setProperty(relId, k, v, state.activeQuery)
           })
         case _ =>
           throw new CypherTypeException("Parameter provided for relationship creation is not a Map")

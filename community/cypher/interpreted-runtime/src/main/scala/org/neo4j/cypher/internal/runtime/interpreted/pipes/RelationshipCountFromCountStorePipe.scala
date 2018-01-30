@@ -19,13 +19,15 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.NameId
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.values.storable.Values
 
 case class RelationshipCountFromCountStorePipe(ident: String, startLabel: Option[LazyLabel],
-                                               typeNames: LazyTypes, endLabel: Option[LazyLabel])
+                                               typeNames: LazyTypes, endLabel: Option[LazyLabel],
+                                               query:QueryState => QueryContext)
                                               (val id: Id = Id.INVALID_ID) extends Pipe {
 
   protected def internalCreateResults(state: QueryState): Iterator[ExecutionContext] = {
@@ -46,15 +48,15 @@ case class RelationshipCountFromCountStorePipe(ident: String, startLabel: Option
   }
 
   private def getLabelId(lazyLabel: Option[LazyLabel], state: QueryState): Option[Int] = lazyLabel match {
-      case Some(label) => label.getOptId(state.query).map(_.id)
+      case Some(label) => label.getOptId(query(state)).map(_.id)
       case _ => Some(NameId.WILDCARD)
     }
 
   private def countOneDirection(state: QueryState, typeNames: LazyTypes, startLabelId: Int, endLabelId: Int) =
-    typeNames.types(state.query) match {
-      case None => state.query.relationshipCountByCountStore(startLabelId, NameId.WILDCARD, endLabelId)
+    typeNames.types(query(state)) match {
+      case None => query(state).relationshipCountByCountStore(startLabelId, NameId.WILDCARD, endLabelId)
       case Some(types) => types.foldLeft(0L) { (count, typeId) =>
-        count + state.query.relationshipCountByCountStore(startLabelId, typeId, endLabelId)
+        count + query(state).relationshipCountByCountStore(startLabelId, typeId, endLabelId)
       }
     }
 }

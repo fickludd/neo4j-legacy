@@ -100,7 +100,9 @@ final class TransactionBoundQueryContext(val transactionalContext: Transactional
   }
   //We cannot assign to value because of periodic commit
   private def writes() = transactionalContext.dataWrite
-  private def reads() = transactionalContext.dataRead
+  private def reads() = transactionalContext.stableDataRead
+  override def activeReads(): Read = transactionalContext.dataRead
+  override def stabilizeActiveTxState(): Unit = transactionalContext.stabilizeActiveTxState()
   private val nodeCursor = allocateAndTraceNodeCursor()
   private val propertyCursor = allocateAndTracePropertyCursor()
   private lazy val nodeValueIndexCursor = allocateAndTraceNodeValueIndexCursor()

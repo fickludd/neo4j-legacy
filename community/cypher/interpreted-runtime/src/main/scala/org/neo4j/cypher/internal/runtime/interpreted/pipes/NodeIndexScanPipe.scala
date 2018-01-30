@@ -27,7 +27,8 @@ import org.neo4j.internal.kernel.api.{CapableIndexReference, IndexReference}
 
 case class NodeIndexScanPipe(ident: String,
                              label: LabelToken,
-                             propertyKey: PropertyKeyToken)
+                             propertyKey: PropertyKeyToken,
+                             query:QueryState => QueryContext)
                             (val id: Id = Id.INVALID_ID) extends Pipe {
 
   private var reference: IndexReference = CapableIndexReference.NO_INDEX
@@ -40,7 +41,7 @@ case class NodeIndexScanPipe(ident: String,
   }
   protected def internalCreateResults(state: QueryState): Iterator[ExecutionContext] = {
     val baseContext = state.createOrGetInitialContext(executionContextFactory)
-    val resultNodes = state.query.indexScan(reference(state.query))
+    val resultNodes = query(state).indexScan(reference(query(state)))
     resultNodes.map(node => executionContextFactory.copyWith(baseContext, ident, node))
   }
 }

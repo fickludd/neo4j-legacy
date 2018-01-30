@@ -30,7 +30,8 @@ import org.neo4j.values.virtual.MapValue
 
 import scala.collection.mutable
 
-class QueryState(val query: QueryContext,
+class QueryState(val activeQuery: QueryContext,
+                 val stableQuery: QueryContext,
                  val resources: ExternalCSVResource,
                  val params: MapValue,
                  val decorator: PipeDecorator = NullPipeDecorator,
@@ -67,14 +68,16 @@ class QueryState(val query: QueryContext,
     params.get(key)
   }
 
-  def getStatistics: QueryStatistics = query.getOptStatistics.getOrElse(QueryState.defaultStatistics)
+  def query(active: Boolean = false):QueryContext = if (active) activeQuery else stableQuery
+
+  def getStatistics: QueryStatistics = activeQuery.getOptStatistics.getOrElse(QueryState.defaultStatistics)
 
   def withDecorator(decorator: PipeDecorator) =
-    new QueryState(query, resources, params, decorator, timeReader, initialContext, triadicState,
+    new QueryState(activeQuery, stableQuery, resources, params, decorator, timeReader, initialContext, triadicState,
                    repeatableReads, cachedIn)
 
   def withInitialContext(initialContext: ExecutionContext) =
-    new QueryState(query, resources, params, decorator, timeReader, Some(initialContext), triadicState,
+    new QueryState(activeQuery, stableQuery, resources, params, decorator, timeReader, Some(initialContext), triadicState,
                    repeatableReads, cachedIn)
 
   /**
@@ -88,7 +91,7 @@ class QueryState(val query: QueryContext,
   def copyArgumentStateTo(ctx: ExecutionContext): Unit = initialContext.foreach(initData => initData.copyTo(ctx))
 
   def withQueryContext(query: QueryContext) =
-    new QueryState(query, resources, params, decorator, timeReader, initialContext, triadicState,
+    new QueryState(query, stableQuery, resources, params, decorator, timeReader, initialContext, triadicState,
                    repeatableReads, cachedIn)
 }
 

@@ -55,6 +55,10 @@ case class TransactionalContextWrapper(tc: TransactionalContext) extends QueryTr
 
   override def cursors: CursorFactory = tc.kernelTransaction.cursors()
 
+  override def stableDataRead: Read = tc.kernelTransaction().stableDataRead()
+
+  override def stabilizeActiveTxState(): Unit = tc.kernelTransaction().stabilizeActiveTxState()
+
   override def dataRead: Read = tc.kernelTransaction().dataRead()
 
   override def dataWrite: Write = tc.kernelTransaction().dataWrite()

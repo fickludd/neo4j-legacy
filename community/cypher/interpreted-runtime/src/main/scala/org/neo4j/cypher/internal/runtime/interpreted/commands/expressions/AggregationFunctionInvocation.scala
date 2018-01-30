@@ -47,7 +47,7 @@ case class AggregationFunctionInvocation(signature: UserFunctionSignature, argum
 
     private def aggregator(state: QueryState) = {
       if (inner == null) {
-        inner = state.query.aggregateFunction(signature.name, signature.allowed)
+        inner = state.activeQuery.aggregateFunction(signature.name, signature.allowed)
       }
       inner
     }

@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
 import org.neo4j.collection.primitive.{Primitive, PrimitiveLongObjectMap}
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.InternalException
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
@@ -34,7 +35,8 @@ case class PruningVarLengthExpandPipe(source: Pipe,
                                       dir: SemanticDirection,
                                       min: Int,
                                       max: Int,
-                                      filteringStep: VarLengthPredicate = VarLengthPredicate.NONE)
+                                      filteringStep: VarLengthPredicate = VarLengthPredicate.NONE,
+                                      query:QueryState => QueryContext)
                                      (val id: Id = Id.INVALID_ID) extends PipeWithSource(source) with Pipe {
   self =>
 
@@ -238,7 +240,7 @@ case class PruningVarLengthExpandPipe(source: Pipe,
       */
     def ensureExpanded(queryState: QueryState, row: ExecutionContext, node: VirtualNodeValue): Unit = {
       if ( rels == null ) {
-        val allRels = queryState.query.getRelationshipsForIds(node.id(), dir, types.types(queryState.query))
+        val allRels = query(queryState).getRelationshipsForIds(node.id(), dir, types.types(query(queryState)))
         rels = allRels.filter(r => {
           filteringStep.filterRelationship(row, queryState)(r) &&
             filteringStep.filterNode(row, queryState)(r.otherNode(node))

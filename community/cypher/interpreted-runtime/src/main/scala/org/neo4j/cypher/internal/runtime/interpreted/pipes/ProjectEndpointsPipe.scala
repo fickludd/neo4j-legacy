@@ -28,13 +28,14 @@ import org.neo4j.values.virtual.{RelationshipReference, RelationshipValue, ListV
 case class ProjectEndpointsPipe(source: Pipe, relName: String,
                                 start: String, startInScope: Boolean,
                                 end: String, endInScope: Boolean,
-                                relTypes: Option[LazyTypes], directed: Boolean, simpleLength: Boolean)
+                                relTypes: Option[LazyTypes], directed: Boolean, simpleLength: Boolean,
+                                query:QueryState => QueryContext)
                                (val id: Id = Id.INVALID_ID) extends PipeWithSource(source)
   with ListSupport  {
   type Projector = (ExecutionContext) => Iterator[ExecutionContext]
 
   protected def internalCreateResults(input: Iterator[ExecutionContext], state: QueryState) =
-    input.flatMap(projector(state.query))
+    input.flatMap(projector(query(state)))
 
   private def projector(qtx: QueryContext): Projector =
     if (simpleLength) project(qtx) else projectVarLength(qtx)

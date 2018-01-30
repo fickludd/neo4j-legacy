@@ -38,7 +38,7 @@ abstract class BaseCreateNodePipe(src: Pipe, key: String, labels: Seq[LazyLabel]
     input.map(createNode(_, state))
 
   private def createNode(context: ExecutionContext, state: QueryState): ExecutionContext = {
-    val node = state.query.createNode()
+    val node = state.activeQuery.createNode()
     setProperties(context, state, node.getId)
     setLabels(context, state, node.getId)
     context += key -> ValueUtils.fromNodeProxy(node)
@@ -50,8 +50,8 @@ abstract class BaseCreateNodePipe(src: Pipe, key: String, labels: Seq[LazyLabel]
         case _: NodeValue | _: RelationshipValue =>
           throw new CypherTypeException("Parameter provided for node creation is not a Map")
         case IsMap(map) =>
-          map(state.query).foreach(new BiConsumer[String, AnyValue] {
-            override def accept(k: String, v: AnyValue): Unit = setProperty(nodeId, k, v, state.query)
+          map(state.activeQuery).foreach(new BiConsumer[String, AnyValue] {
+            override def accept(k: String, v: AnyValue): Unit = setProperty(nodeId, k, v, state.activeQuery)
           })
 
         case _ =>
@@ -73,8 +73,8 @@ abstract class BaseCreateNodePipe(src: Pipe, key: String, labels: Seq[LazyLabel]
   protected def handleNull(key: String): Unit
 
   private def setLabels(context: ExecutionContext, state: QueryState, nodeId: Long) = {
-    val labelIds = labels.map(_.getOrCreateId(state.query).id)
-    state.query.setLabelsOnNode(nodeId, labelIds.iterator)
+    val labelIds = labels.map(_.getOrCreateId(state.activeQuery).id)
+    state.activeQuery.setLabelsOnNode(nodeId, labelIds.iterator)
   }
 }
 

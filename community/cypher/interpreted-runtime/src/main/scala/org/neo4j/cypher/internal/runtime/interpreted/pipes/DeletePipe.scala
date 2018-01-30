@@ -52,13 +52,13 @@ case class DeletePipe(src: Pipe, expression: Expression, forced: Boolean)
     }
   }
 
-  private def deleteNode(n: NodeValue, state: QueryState) = if (!state.query.nodeOps.isDeletedInThisTx(n.id())) {
-    if (forced) state.query.detachDeleteNode(n.id())
-    else state.query.nodeOps.delete(n.id())
+  private def deleteNode(n: NodeValue, state: QueryState) = if (!state.activeQuery.nodeOps.isDeletedInThisTx(n.id())) {
+    if (forced) state.activeQuery.detachDeleteNode(n.id())
+    else state.activeQuery.nodeOps.delete(n.id())
   }
 
   private def deleteRelationship(r: RelationshipValue, state: QueryState) =
-    if (!state.query.relationshipOps.isDeletedInThisTx(r.id())) state.query.relationshipOps.delete(r.id())
+    if (!state.activeQuery.relationshipOps.isDeletedInThisTx(r.id())) state.activeQuery.relationshipOps.delete(r.id())
 
   private def deletePath(p: PathValue, state: QueryState) = p.asList().iterator().asScala.foreach {
     case n: NodeValue =>

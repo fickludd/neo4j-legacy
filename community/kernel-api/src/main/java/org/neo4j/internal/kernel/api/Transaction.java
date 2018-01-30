@@ -61,6 +61,16 @@ public interface Transaction extends AutoCloseable
     Read dataRead();
 
     /**
+     * TODO: javadoc
+     */
+    Read stableDataRead();
+
+    /**
+     * TODO: javadoc
+     */
+    void stabilizeActiveTxState();
+
+    /**
      * @return The Write operations of the graph.
      * @throws InvalidTransactionTypeKernelException when transaction cannot be upgraded to a write transaction. This
      * can happen when there have been schema modifications.

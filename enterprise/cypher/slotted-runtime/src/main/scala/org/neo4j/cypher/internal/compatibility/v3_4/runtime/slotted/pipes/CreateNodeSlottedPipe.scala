@@ -36,7 +36,8 @@ abstract class BaseCreateNodeSlottedPipe(source: Pipe,
                                          ident: String,
                                          slots: SlotConfiguration,
                                          labels: Seq[LazyLabel],
-                                         properties: Option[Expression])
+                                         properties: Option[Expression],
+                                         query:QueryState => QueryContext)
   extends PipeWithSource(source) with Pipe {
 
   private val offset = slots.getLongOffsetFor(ident)
@@ -44,7 +45,7 @@ abstract class BaseCreateNodeSlottedPipe(source: Pipe,
   override protected def internalCreateResults(input: Iterator[ExecutionContext], state: QueryState): Iterator[ExecutionContext] = {
     input.map {
       row =>
-        val nodeId = state.query.createNodeId()
+        val nodeId = query(state).createNodeId()
         setProperties(row, state, nodeId)
         setLabels(row, state, nodeId)
         row.setLongAt(offset, nodeId)
@@ -58,8 +59,8 @@ abstract class BaseCreateNodeSlottedPipe(source: Pipe,
         case _: Node | _: Relationship =>
           throw new CypherTypeException("Parameter provided for node creation is not a Map")
         case IsMap(m) =>
-          m(state.query).foreach(new BiConsumer[String, AnyValue] {
-            override def accept(k: String, v: AnyValue): Unit = setProperty(nodeId, k, v, state.query)
+          m(query(state)).foreach(new BiConsumer[String, AnyValue] {
+            override def accept(k: String, v: AnyValue): Unit = setProperty(nodeId, k, v, query(state))
           })
         case _ =>
           throw new CypherTypeException("Parameter provided for node creation is not a Map")
@@ -80,8 +81,8 @@ abstract class BaseCreateNodeSlottedPipe(source: Pipe,
   protected def handleNull(key: String): Unit
 
   private def setLabels(context: ExecutionContext, state: QueryState, nodeId: Long) = {
-    val labelIds = labels.map(_.getOrCreateId(state.query).id)
-    state.query.setLabelsOnNode(nodeId, labelIds.iterator)
+    val labelIds = labels.map(_.getOrCreateId(query(state)).id)
+    query(state).setLabelsOnNode(nodeId, labelIds.iterator)
   }
 }
 
@@ -89,9 +90,10 @@ case class CreateNodeSlottedPipe(source: Pipe,
                                  ident: String,
                                  slots: SlotConfiguration,
                                  labels: Seq[LazyLabel],
-                                 properties: Option[Expression])
+                                 properties: Option[Expression],
+                                 query:QueryState => QueryContext)
                                 (val id: Id = Id.INVALID_ID)
-  extends BaseCreateNodeSlottedPipe(source, ident, slots, labels, properties) {
+  extends BaseCreateNodeSlottedPipe(source, ident, slots, labels, properties, query) {
 
   override protected def handleNull(key: String) {
     // do nothing
@@ -102,9 +104,10 @@ case class MergeCreateNodeSlottedPipe(source: Pipe,
                                       ident: String,
                                       slots: SlotConfiguration,
                                       labels: Seq[LazyLabel],
-                                      properties: Option[Expression])
+                                      properties: Option[Expression],
+                                      query:QueryState => QueryContext)
                                      (val id: Id = Id.INVALID_ID)
-  extends BaseCreateNodeSlottedPipe(source, ident, slots, labels, properties) {
+  extends BaseCreateNodeSlottedPipe(source, ident, slots, labels, properties, query) {
 
   override protected def handleNull(key: String) {
     //merge cannot use null properties, since in that case the match part will not find the result of the create

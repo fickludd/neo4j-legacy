@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.InternalException
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
@@ -52,7 +53,8 @@ case class VarLengthExpandPipe(source: Pipe,
                                min: Int,
                                max: Option[Int],
                                nodeInScope: Boolean,
-                               filteringStep: VarLengthPredicate= VarLengthPredicate.NONE)
+                               filteringStep: VarLengthPredicate= VarLengthPredicate.NONE,
+                               query:QueryState => QueryContext)
                               (val id: Id = Id.INVALID_ID) extends PipeWithSource(source) {
   private def varLengthExpand(node: NodeValue, state: QueryState, maxDepth: Option[Int],
                               row: ExecutionContext): Iterator[(NodeValue, Seq[RelationshipValue])] = {
@@ -63,8 +65,8 @@ case class VarLengthExpandPipe(source: Pipe,
       def next(): (NodeValue, Seq[RelationshipValue]) = {
         val (node, rels) = stack.pop()
         if (rels.length < maxDepth.getOrElse(Int.MaxValue) && filteringStep.filterNode(row,state)(node)) {
-          val relationships: Iterator[RelationshipValue] = state.query.getRelationshipsForIds(node.id(), dir,
-                                                                                      types.types(state.query))
+          val relationships: Iterator[RelationshipValue] = query(state).getRelationshipsForIds(node.id(), dir,
+                                                                                      types.types(query(state)))
 
           relationships.filter(filteringStep.filterRelationship(row, state)).foreach { rel =>
             val otherNode = rel.otherNode(node)
@@ -102,7 +104,7 @@ case class VarLengthExpandPipe(source: Pipe,
             expand(row, node)
 
           case nodeRef: NodeReference =>
-            val node = state.query.nodeOps.getById(nodeRef.id)
+            val node = query(state).nodeOps.getById(nodeRef.id)
             expand(row, node)
 
           case Values.NO_VALUE =>

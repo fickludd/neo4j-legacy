@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.runtime.interpreted.pipes
 import java.lang
 import java.util.function
 
+import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.values.AnyValue
@@ -30,7 +31,8 @@ import org.neo4j.values.virtual.VirtualValues
 
 import scala.collection.JavaConverters._
 
-case class UndirectedRelationshipByIdSeekPipe(ident: String, relIdExpr: SeekArgs, toNode: String, fromNode: String)
+case class UndirectedRelationshipByIdSeekPipe(ident: String, relIdExpr: SeekArgs, toNode: String, fromNode: String,
+                                              query:QueryState => QueryContext)
                                              (val id: Id = Id.INVALID_ID) extends Pipe {
 
   relIdExpr.registerOwningPipe(this)
@@ -46,7 +48,7 @@ case class UndirectedRelationshipByIdSeekPipe(ident: String, relIdExpr: SeekArgs
       toNode,
       ctx,
       executionContextFactory,
-      state.query.relationshipOps,
+      query(state).relationshipOps,
       relIds.iterator.asScala
     )
   }
