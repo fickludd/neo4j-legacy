@@ -36,7 +36,7 @@ import org.neo4j.kernel.impl.core.EmbeddedProxySPI
 import org.neo4j.kernel.impl.factory.DatabaseInfo
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Value
-import org.neo4j.values.virtual.{ListValue, NodeValue, RelationshipValue}
+import org.neo4j.values.virtual._
 
 import scala.collection.Iterator
 
@@ -68,9 +68,9 @@ trait QueryContext extends TokenContext {
 
   def relationshipOps: Operations[RelationshipValue]
 
-  def createNode(): Node
-
   def createNodeId(): Long
+
+  def fullNode(node: NodeReference): NodeFullValue
 
   def createRelationship(start: Long, end: Long, relType: Int): RelationshipValue
 

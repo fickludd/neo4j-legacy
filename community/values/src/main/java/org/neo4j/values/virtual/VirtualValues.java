@@ -188,9 +188,9 @@ public final class VirtualValues
         return new PathValue( nodes, relationships );
     }
 
-    public static NodeValue nodeValue( long id, TextArray labels, MapValue properties )
+    public static NodeFullValue nodeValue( long id, TextArray labels, MapValue properties )
     {
-        return new NodeValue.DirectNodeValue( id, labels, properties );
+        return new NodeFullValue.DirectNodeValue( id, labels, properties );
     }
 
     public static RelationshipValue relationshipValue( long id, NodeValue startNode, NodeValue endNode, TextValue type,

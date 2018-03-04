@@ -45,8 +45,8 @@ import org.neo4j.values.storable.Values;
 import org.neo4j.values.virtual.RelationshipValue;
 import org.neo4j.values.virtual.ListValue;
 import org.neo4j.values.virtual.MapValue;
-import org.neo4j.values.virtual.NodeValue;
 import org.neo4j.values.virtual.PathValue;
+import org.neo4j.values.virtual.NodeValue;
 import org.neo4j.values.virtual.VirtualValues;
 
 import static java.util.stream.StreamSupport.stream;
@@ -79,6 +79,10 @@ public final class ValueUtils
             {
                 if ( object instanceof Node )
                 {
+                    if ( object instanceof DBSchemaProcedureNode )
+                    {
+                        return (DBSchemaProcedureNode) object;
+                    }
                     return fromNodeProxy( (Node) object );
                 }
                 else if ( object instanceof Relationship )
@@ -226,7 +230,7 @@ public final class ValueUtils
     public static PathValue asPathValue( Path path )
     {
         NodeValue[] nodes = stream( path.nodes().spliterator(), false )
-                .map( ValueUtils::fromNodeProxy ).toArray( NodeValue[]::new );
+                .map( nodeProxy -> VirtualValues.node( nodeProxy.getId() ) ).toArray( NodeValue[]::new );
         RelationshipValue[] relationships = stream( path.relationships().spliterator(), false )
                 .map( ValueUtils::fromRelationshipProxy ).toArray( RelationshipValue[]::new );
 
@@ -331,7 +335,7 @@ public final class ValueUtils
 
     public static NodeValue fromNodeProxy( Node node )
     {
-        return new NodeProxyWrappingNodeValue( node );
+        return VirtualValues.node( node.getId() );
     }
 
     public static RelationshipValue fromRelationshipProxy( Relationship relationship )

@@ -30,7 +30,6 @@ import org.neo4j.values.ValueMapper;
 import org.neo4j.values.virtual.NodeValue;
 import org.neo4j.values.virtual.PathValue;
 import org.neo4j.values.virtual.RelationshipValue;
-import org.neo4j.values.virtual.VirtualNodeValue;
 import org.neo4j.values.virtual.VirtualRelationshipValue;
 
 public class DefaultValueMapper extends ValueMapper.JavaMapper
@@ -43,11 +42,11 @@ public class DefaultValueMapper extends ValueMapper.JavaMapper
     }
 
     @Override
-    public Node mapNode( VirtualNodeValue value )
+    public Node mapNode( NodeValue value )
     {
-        if ( value instanceof NodeProxyWrappingNodeValue )
-        { // this is the back door through which "virtual nodes" slip
-            return ((NodeProxyWrappingNodeValue) value).nodeProxy();
+        if ( value instanceof DBSchemaProcedureNode )
+        { // this is the back door through which db.schema() nodes slip
+            return (DBSchemaProcedureNode) value;
         }
         return new NodeProxy( proxySPI, value.id() );
     }

@@ -20,11 +20,10 @@
 package org.neo4j.cypher.internal.runtime.interpreted
 
 import java.util
-import java.util.Map
 
 import org.neo4j.cypher.internal.runtime.{Operations, QueryContext}
 import org.neo4j.values.AnyValue
-import org.neo4j.values.virtual.{MapValue, VirtualRelationshipValue, VirtualNodeValue, VirtualValues}
+import org.neo4j.values.virtual.{MapValue, VirtualRelationshipValue, NodeValue, VirtualValues}
 
 import scala.collection.immutable
 
@@ -43,7 +42,7 @@ trait MapSupport {
 
   def castToMap: PartialFunction[AnyValue, QueryContext => MapValue] = {
     case x: MapValue => _ => x
-    case x: VirtualNodeValue => ctx => VirtualValues.map(new LazyMap(ctx, ctx.nodeOps, x.id()))
+    case x: NodeValue => ctx => VirtualValues.map(new LazyMap(ctx, ctx.nodeOps, x.id()))
     case x: VirtualRelationshipValue => ctx => VirtualValues.map(new LazyMap(ctx, ctx.relationshipOps, x.id()))
   }
 }

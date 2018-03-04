@@ -101,10 +101,6 @@ case class VarLengthExpandPipe(source: Pipe,
           case node: NodeValue =>
             expand(row, node)
 
-          case nodeRef: NodeReference =>
-            val node = state.query.nodeOps.getById(nodeRef.id)
-            expand(row, node)
-
           case Values.NO_VALUE =>
             if (nodeInScope)
               Iterator(row.set(relName, Values.NO_VALUE))
@@ -117,10 +113,10 @@ case class VarLengthExpandPipe(source: Pipe,
     }
   }
 
-  private def isToNodeValid(row: ExecutionContext, state: QueryState, node: VirtualNodeValue): Boolean =
+  private def isToNodeValid(row: ExecutionContext, state: QueryState, node: NodeValue): Boolean =
     !nodeInScope || {
       fetchFromContext(row, state, toName) match {
-        case toNode: VirtualNodeValue =>
+        case toNode: NodeValue =>
           toNode.id == node.id
         case _ =>
           false

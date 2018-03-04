@@ -237,7 +237,7 @@ case class SlottedExecutionContext(slots: SlotConfiguration) extends ExecutionCo
   // TODO: If we save currently utilized slot size per logical plan this could be simplified to checking
   // if the slot offset is less than the current size.
   // This is also the only way that we could detect if a LongSlot was not initialized
-  override def boundEntities(materializeNode: Long => AnyValue, materializeRelationship: Long => AnyValue): Map[String, AnyValue] = {
+  override def boundEntities(materializeRelationship: Long => AnyValue): Map[String, AnyValue] = {
     var entities = mutable.Map.empty[String, AnyValue]
     slots.foreachSlot {
       case (key, RefSlot(offset, _, _)) =>
@@ -246,21 +246,19 @@ case class SlottedExecutionContext(slots: SlotConfiguration) extends ExecutionCo
           entity match {
             case _: NodeValue | _: RelationshipValue =>
               entities += key -> entity
-            case nodeRef: NodeReference =>
-              entities += key -> materializeNode(nodeRef.id())
             case relRef: RelationshipReference =>
               entities += key -> materializeRelationship(relRef.id())
             case _ => // Do nothing
           }
         }
       case (key, LongSlot(offset, false, CTNode)) =>
-        entities += key -> materializeNode(getLongAt(offset))
+        entities += key -> VirtualValues.node(getLongAt(offset))
       case (key, LongSlot(offset, false, CTRelationship)) =>
         entities += key -> materializeRelationship(getLongAt(offset))
       case (key, LongSlot(offset, true, CTNode)) =>
         val entityId = getLongAt(offset)
         if (entityId >= 0)
-          entities += key -> materializeNode(getLongAt(offset))
+          entities += key -> VirtualValues.node(getLongAt(offset))
       case (key, LongSlot(offset, true, CTRelationship)) =>
         val entityId = getLongAt(offset)
         if (entityId >= 0)

@@ -19,23 +19,35 @@
  */
 package org.neo4j.values.virtual;
 
+
 import org.neo4j.values.AnyValueWriter;
+import org.neo4j.values.storable.TextArray;
 
 import static java.lang.String.format;
 
-public class NodeReference extends NodeValue
+public abstract class NodeFullValue extends NodeValue
 {
     private final long id;
 
-    NodeReference( long id )
+    protected NodeFullValue( long id )
     {
         this.id = id;
     }
 
+    public abstract TextArray labels();
+
+    public abstract MapValue properties();
+
     @Override
     public <E extends Exception> void writeTo( AnyValueWriter<E> writer ) throws E
     {
-        writer.writeNodeReference( id );
+        writer.writeNode( id, labels(), properties() );
+    }
+
+    @Override
+    public long id()
+    {
+        return id;
     }
 
     @Override
@@ -44,9 +56,30 @@ public class NodeReference extends NodeValue
         return format( "(%d)", id );
     }
 
-    @Override
-    public long id()
+    static class DirectNodeValue extends NodeFullValue
     {
-        return id;
+        private final TextArray labels;
+        private final MapValue properties;
+
+        DirectNodeValue( long id, TextArray labels, MapValue properties )
+        {
+            super( id );
+            assert labels != null;
+            assert properties != null;
+            this.labels = labels;
+            this.properties = properties;
+        }
+
+        @Override
+        public TextArray labels()
+        {
+            return labels;
+        }
+
+        @Override
+        public MapValue properties()
+        {
+            return properties;
+        }
     }
 }

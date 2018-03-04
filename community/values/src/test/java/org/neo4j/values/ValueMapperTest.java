@@ -32,10 +32,10 @@ import org.junit.runners.Parameterized;
 import org.neo4j.graphdb.spatial.Point;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
+import org.neo4j.values.virtual.NodeFullValue;
 import org.neo4j.values.virtual.NodeValue;
 import org.neo4j.values.virtual.PathValue;
 import org.neo4j.values.virtual.RelationshipValue;
-import org.neo4j.values.virtual.VirtualNodeValue;
 import org.neo4j.values.virtual.VirtualRelationshipValue;
 
 import static java.util.stream.Collectors.toList;
@@ -85,9 +85,9 @@ public class ValueMapperTest
     @Parameterized.Parameters( name = "{0}" )
     public static Iterable<Object[]> parameters()
     {
-        NodeValue node1 = nodeValue( 1, stringArray(), emptyMap() );
-        NodeValue node2 = nodeValue( 2, stringArray(), emptyMap() );
-        NodeValue node3 = nodeValue( 3, stringArray(), emptyMap() );
+        NodeFullValue node1 = nodeValue( 1, stringArray(), emptyMap() );
+        NodeFullValue node2 = nodeValue( 2, stringArray(), emptyMap() );
+        NodeFullValue node3 = nodeValue( 3, stringArray(), emptyMap() );
         RelationshipValue relationship1 = relationshipValue( 100, node1, node2, stringValue( "ONE" ), emptyMap() );
         RelationshipValue relationship2 = relationshipValue( 200, node2, node2, stringValue( "TWO" ), emptyMap() );
         return Arrays.asList(
@@ -95,7 +95,7 @@ public class ValueMapperTest
                 new Object[] {relationship1},
                 new Object[] {
                         path(
-                                new NodeValue[] {node1, node2, node3},
+                                new NodeFullValue[] {node1, node2, node3},
                                 new RelationshipValue[] {relationship1, relationship2} )},
                 new Object[] {
                         map(
@@ -187,7 +187,7 @@ public class ValueMapperTest
         }
 
         @Override
-        public Object mapNode( VirtualNodeValue value )
+        public Object mapNode( NodeValue value )
         {
             return new MappedGraphType( value );
         }

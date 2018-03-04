@@ -86,7 +86,7 @@ trait CachingExpandInto {
     result
   }
 
-  private def relIterator(query: QueryContext, fromNode: NodeValue,  toNode: NodeValue, preserveDirection: Boolean,
+  private def relIterator(query: QueryContext, fromNode: NodeValue, toNode: NodeValue, preserveDirection: Boolean,
                           relTypes: Option[Array[Int]], relCache: RelationshipsCache, dir: SemanticDirection) = {
     val (start, localDirection, end) = if(preserveDirection) (fromNode, dir, toNode) else (toNode, dir.reversed, fromNode)
     val relationships = query.getRelationshipsForIds(start.id(), localDirection, relTypes)

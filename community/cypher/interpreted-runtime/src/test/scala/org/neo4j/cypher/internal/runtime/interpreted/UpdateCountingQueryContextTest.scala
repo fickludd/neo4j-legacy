@@ -77,7 +77,7 @@ class UpdateCountingQueryContextTest extends CypherFunSuite {
   }
 
   test("create_node") {
-    context.createNode()
+    context.createNodeId()
 
     context.getStatistics should equal(QueryStatistics(nodesCreated = 1))
   }

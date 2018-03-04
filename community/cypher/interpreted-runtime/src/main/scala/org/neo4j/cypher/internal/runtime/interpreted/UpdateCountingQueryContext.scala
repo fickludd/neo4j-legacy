@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.planner.v3_4.spi.IndexDescriptor
 import org.neo4j.cypher.internal.runtime.{Operations, QueryContext, QueryStatistics}
 import org.neo4j.cypher.internal.v3_4.expressions.SemanticDirection
 import org.neo4j.values.storable.Value
-import org.neo4j.values.virtual.{RelationshipValue, NodeValue}
+import org.neo4j.values.virtual.{NodeReference, NodeFullValue, RelationshipValue, NodeValue}
 
 class UpdateCountingQueryContext(inner: QueryContext) extends DelegatingQueryContext(inner) {
 
@@ -66,15 +66,12 @@ class UpdateCountingQueryContext(inner: QueryContext) extends DelegatingQueryCon
 
   override def getOptStatistics = Some(getStatistics)
 
-  override def createNode() = {
-    nodesCreated.increase()
-    inner.createNode()
-  }
-
   override def createNodeId() = {
     nodesCreated.increase()
     inner.createNodeId()
   }
+
+  override def fullNode(node: NodeReference): NodeFullValue = inner.fullNode(node)
 
   override def nodeOps: Operations[NodeValue] =
     new CountingOps[NodeValue](inner.nodeOps, nodesDeleted)

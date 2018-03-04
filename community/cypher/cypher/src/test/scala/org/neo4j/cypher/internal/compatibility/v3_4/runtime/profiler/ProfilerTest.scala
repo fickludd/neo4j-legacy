@@ -273,7 +273,7 @@ class ProfilerTest extends CypherFunSuite {
       val state1 = QueryStateHelper.emptyWith(query = ctx1, resources = mock[ExternalCSVResource])
 
       val profiled1 = profiler.decorate(pipe1, state1)
-      profiled1.query.createNode()
+      profiled1.query.createNodeId()
       profiled1.query.asInstanceOf[ProfilingPipeQueryContext].count should equal(1)
 
       val pipe2 = ArgumentPipe()(idGen.id())
@@ -282,7 +282,7 @@ class ProfilerTest extends CypherFunSuite {
 
 
       val profiled2 = profiler.decorate(pipe2, state2)
-      profiled2.query.createNode()
+      profiled2.query.createNodeId()
       profiled2.query.asInstanceOf[ProfilingPipeQueryContext].count should equal(1)
     }
 
@@ -329,7 +329,7 @@ case class ProfilerTestPipe(source: Pipe, name: String, rows: Int, dbAccess: Int
       statisticProvider.hits = hits
       statisticProvider.misses = misses
     }
-    (0 until dbAccess).foreach(x => state.query.createNode())
+    (0 until dbAccess).foreach(x => state.query.createNodeId())
     (0 until rows).map(x => ExecutionContext.empty).toIterator
   }
 }

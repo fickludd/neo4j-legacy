@@ -49,11 +49,6 @@ public interface AnyValueWriter<E extends Exception> extends ValueWriter<E>
 
     void writePath( NodeValue[] nodes, RelationshipValue[] relationships ) throws E;
 
-    default void writeVirtualNodeHack( Object node )
-    {
-        // do nothing, this is an ugly hack.
-    }
-
     default void writeVirtualRelationshipHack( Object relationship )
     {
         // do nothing, this is an ugly hack.

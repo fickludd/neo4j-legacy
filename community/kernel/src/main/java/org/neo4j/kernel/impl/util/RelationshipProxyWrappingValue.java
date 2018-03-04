@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel.impl.util;
 
-import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.values.AnyValueWriter;
@@ -28,7 +27,6 @@ import org.neo4j.values.storable.Values;
 import org.neo4j.values.virtual.RelationshipValue;
 import org.neo4j.values.virtual.MapValue;
 import org.neo4j.values.virtual.NodeValue;
-import org.neo4j.values.virtual.VirtualNodeValue;
 import org.neo4j.values.virtual.VirtualValues;
 
 public class RelationshipProxyWrappingValue extends RelationshipValue
@@ -83,7 +81,7 @@ public class RelationshipProxyWrappingValue extends RelationshipValue
                 start = startNode;
                 if ( start == null )
                 {
-                    start = startNode = ValueUtils.fromNodeProxy( relationship.getStartNode() );
+                    start = startNode = VirtualValues.node( relationship.getStartNodeId() );
                 }
             }
         }
@@ -101,31 +99,11 @@ public class RelationshipProxyWrappingValue extends RelationshipValue
                 end = endNode;
                 if ( end == null )
                 {
-                    end = endNode = ValueUtils.fromNodeProxy( relationship.getEndNode() );
+                    end = endNode = VirtualValues.node( relationship.getEndNodeId() );
                 }
             }
         }
         return end;
-    }
-
-    @Override
-    public NodeValue otherNode( VirtualNodeValue node )
-    {
-        if ( node instanceof NodeProxyWrappingNodeValue )
-        {
-            Node proxy = ((NodeProxyWrappingNodeValue) node).nodeProxy();
-            return ValueUtils.fromNodeProxy( relationship.getOtherNode( proxy ) );
-        }
-        else
-        {
-           return super.otherNode( node );
-        }
-    }
-
-    @Override
-    public long otherNodeId( long node )
-    {
-        return relationship.getOtherNodeId( node );
     }
 
     @Override

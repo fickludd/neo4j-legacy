@@ -32,7 +32,7 @@ import org.neo4j.internal.kernel.api.helpers.RelationshipSelectionCursor
 import org.neo4j.kernel.impl.api.store.RelationshipIterator
 import org.neo4j.kernel.impl.core.EmbeddedProxySPI
 import org.neo4j.values.AnyValue
-import org.neo4j.values.virtual.{ListValue, NodeValue, RelationshipValue}
+import org.neo4j.values.virtual._
 
 trait QueryContextAdaptation {
   self: QueryContext =>
@@ -45,9 +45,9 @@ trait QueryContextAdaptation {
 
   override def createNodePropertyExistenceConstraint(labelId: Int, propertyKeyId: Int): Boolean = ???
 
-  override def createNode(): Node = ???
-
   override def createNodeId(): Long = ???
+
+  override def fullNode(node: NodeReference): NodeFullValue = ???
 
   override def dropRelationshipPropertyExistenceConstraint(relTypeId: Int, propertyKeyId: Int): Unit = ???
 

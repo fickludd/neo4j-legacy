@@ -34,7 +34,7 @@ import org.neo4j.kernel.impl.api.store.RelationshipIterator
 import org.neo4j.kernel.impl.core.EmbeddedProxySPI
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Value
-import org.neo4j.values.virtual.{ListValue, NodeValue, RelationshipValue}
+import org.neo4j.values.virtual._
 
 import scala.collection.Iterator
 
@@ -52,11 +52,11 @@ class ExceptionTranslatingQueryContext(val inner: QueryContext) extends QueryCon
   override def setLabelsOnNode(node: Long, labelIds: Iterator[Int]): Int =
     translateException(inner.setLabelsOnNode(node, labelIds))
 
-  override def createNode(): Node =
-    translateException(inner.createNode())
-
   override def createNodeId(): Long =
     translateException(inner.createNodeId())
+
+  override def fullNode(node: NodeReference): NodeFullValue =
+    translateException(inner.fullNode(node))
 
   override def getLabelsForNode(node: Long): ListValue =
     translateException(inner.getLabelsForNode(node))

@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.util.v3_4.InternalException
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.cypher.internal.v3_4.expressions.SemanticDirection
 import org.neo4j.values.storable.{Value, Values}
-import org.neo4j.values.virtual.{RelationshipValue, VirtualNodeValue}
+import org.neo4j.values.virtual.{RelationshipValue, NodeValue}
 
 case class PruningVarLengthExpandPipe(source: Pipe,
                                       fromName: String,
@@ -78,7 +78,7 @@ case class PruningVarLengthExpandPipe(source: Pipe,
     * node.
     **/
   class PruningDFS(val state: FullPruneState,
-                   val node: VirtualNodeValue,
+                   val node: NodeValue,
                    val path: Array[Long],
                    val pathLength: Int,
                    val queryState: QueryState,
@@ -90,7 +90,7 @@ case class PruningVarLengthExpandPipe(source: Pipe,
     var nodeState: NodeState = NodeState.UNINITIALIZED
     var relationshipCursor = 0
 
-    def nextEndNode(): VirtualNodeValue = {
+    def nextEndNode(): NodeValue = {
 
       initiate()
 
@@ -236,7 +236,7 @@ case class PruningVarLengthExpandPipe(source: Pipe,
     /**
       * If not already done, list all relationships of a node, given the predicates of this pipe.
       */
-    def ensureExpanded(queryState: QueryState, row: ExecutionContext, node: VirtualNodeValue): Unit = {
+    def ensureExpanded(queryState: QueryState, row: ExecutionContext, node: NodeValue): Unit = {
       if ( rels == null ) {
         val allRels = queryState.query.getRelationshipsForIds(node.id(), dir, types.types(queryState.query))
         rels = allRels.filter(r => {
@@ -267,7 +267,7 @@ case class PruningVarLengthExpandPipe(source: Pipe,
         if (depth == -1) {
           val fromValue = inputRow.getOrElse(fromName, error(s"Required variable `$fromName` is not in context"))
           fromValue match {
-            case node: VirtualNodeValue =>
+            case node: NodeValue =>
               push( node = node,
                 pathLength = 0,
                 expandMap = Primitive.longObjectMap[NodeState](),
@@ -281,7 +281,7 @@ case class PruningVarLengthExpandPipe(source: Pipe,
               error(s"Expected variable `$fromName` to be a node, got $fromValue")
           }
         } else {
-          var maybeEndNode: VirtualNodeValue = null
+          var maybeEndNode: NodeValue = null
           while ( depth >= 0 && maybeEndNode == null ) {
             maybeEndNode = nodeState(depth).nextEndNode()
             if (maybeEndNode == null) pop()
@@ -295,11 +295,11 @@ case class PruningVarLengthExpandPipe(source: Pipe,
       else executionContextFactory.copyWith(inputRow, self.toName, endNode)
     }
 
-    def push( node: VirtualNodeValue,
-              pathLength: Int,
-              expandMap: PrimitiveLongObjectMap[NodeState],
-              prevLocalRelIndex: Int,
-              prevNodeState: NodeState ): VirtualNodeValue = {
+    def push(node: NodeValue,
+             pathLength: Int,
+             expandMap: PrimitiveLongObjectMap[NodeState],
+             prevLocalRelIndex: Int,
+             prevNodeState: NodeState ): NodeValue = {
       depth += 1
       nodeState(depth) =
         new PruningDFS(this, node, path, pathLength, queryState, inputRow, expandMap, prevLocalRelIndex, prevNodeState)

@@ -73,7 +73,7 @@ import org.neo4j.values.storable.TimeArray;
 import org.neo4j.values.storable.TimeValue;
 import org.neo4j.values.virtual.MapValue;
 import org.neo4j.values.virtual.PathValue;
-import org.neo4j.values.virtual.VirtualNodeValue;
+import org.neo4j.values.virtual.NodeValue;
 import org.neo4j.values.virtual.VirtualRelationshipValue;
 
 public interface ValueMapper<Base>
@@ -82,7 +82,7 @@ public interface ValueMapper<Base>
 
     Base mapPath( PathValue value );
 
-    Base mapNode( VirtualNodeValue value );
+    Base mapNode( NodeValue value );
 
     Base mapRelationship( VirtualRelationshipValue value );
 

@@ -118,7 +118,7 @@ case class SetNodePropertyOperation(nodeName: String, propertyKey: LazyPropertyK
 
   override def name = "SetNodeProperty"
 
-  override protected def id(item: Any) = CastSupport.castOrFail[VirtualNodeValue](item).id()
+  override protected def id(item: Any) = CastSupport.castOrFail[NodeValue](item).id()
 
   override protected def operations(qtx: QueryContext) = qtx.nodeOps
 }
@@ -143,7 +143,7 @@ case class SetPropertyOperation(entityExpr: Expression, propertyKey: LazyPropert
     val resolvedEntity = entityExpr(executionContext, state)
     if (resolvedEntity != Values.NO_VALUE) {
       val (entityId, ops) = resolvedEntity match {
-        case node: VirtualNodeValue => (node.id(), state.query.nodeOps)
+        case node: NodeValue => (node.id(), state.query.nodeOps)
         case rel: VirtualRelationshipValue => (rel.id(), state.query.relationshipOps)
         case _ => throw new InvalidArgumentException(
           s"The expression $entityExpr should have been a node or a relationship, but got $resolvedEntity")
@@ -209,7 +209,7 @@ case class SetNodePropertyFromMapOperation(nodeName: String, expression: Express
 
   override def name = "SetNodePropertyFromMap"
 
-  override protected def id(item: Any) = CastSupport.castOrFail[VirtualNodeValue](item).id()
+  override protected def id(item: Any) = CastSupport.castOrFail[NodeValue](item).id()
 
   override protected def operations(qtx: QueryContext) = qtx.nodeOps
 }
@@ -230,7 +230,7 @@ case class SetLabelsOperation(nodeName: String, labels: Seq[LazyLabel]) extends 
   override def set(executionContext: ExecutionContext, state: QueryState) = {
     val value: AnyValue = executionContext.get(nodeName).get
     if (value != Values.NO_VALUE) {
-      val nodeId = CastSupport.castOrFail[VirtualNodeValue](value).id()
+      val nodeId = CastSupport.castOrFail[NodeValue](value).id()
       val labelIds = labels.map(_.getOrCreateId(state.query).id)
       state.query.setLabelsOnNode(nodeId, labelIds.iterator)
     }

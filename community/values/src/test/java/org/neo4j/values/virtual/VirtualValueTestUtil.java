@@ -47,7 +47,7 @@ public class VirtualValueTestUtil
         }
     }
 
-    public static NodeValue node( long id, String... labels )
+    public static NodeFullValue node( long id, String... labels )
     {
         TextValue[] labelValues = new TextValue[labels.length];
         for ( int i = 0; i < labels.length; i++ )
@@ -60,13 +60,13 @@ public class VirtualValueTestUtil
     public static VirtualValue path( VirtualValue... pathElements )
     {
         assert pathElements.length % 2 == 1;
-        NodeValue[] nodes = new NodeValue[pathElements.length / 2 + 1];
+        NodeFullValue[] nodes = new NodeFullValue[pathElements.length / 2 + 1];
         RelationshipValue[] rels = new RelationshipValue[pathElements.length / 2];
-        nodes[0] = (NodeValue) pathElements[0];
+        nodes[0] = (NodeFullValue) pathElements[0];
         for ( int i = 1; i < pathElements.length; i += 2 )
         {
             rels[i / 2] = (RelationshipValue) pathElements[i];
-            nodes[i / 2 + 1] = (NodeValue) pathElements[i + 1];
+            nodes[i / 2 + 1] = (NodeFullValue) pathElements[i + 1];
         }
         return VirtualValues.path( nodes, rels );
     }
@@ -99,11 +99,11 @@ public class VirtualValueTestUtil
         return VirtualValues.map( keys, values );
     }
 
-    public static NodeValue[] nodes( long... ids )
+    public static NodeFullValue[] nodes( long... ids )
     {
         return Arrays.stream( ids )
                 .mapToObj( id -> nodeValue( id, stringArray( "L" ), emptyMap() ) )
-                .toArray( NodeValue[]::new );
+                .toArray( NodeFullValue[]::new );
     }
 
     public static RelationshipValue[] relationships( long... ids )

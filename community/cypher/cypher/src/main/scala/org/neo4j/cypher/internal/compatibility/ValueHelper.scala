@@ -21,14 +21,15 @@ package org.neo4j.cypher.internal.compatibility
 
 import java.util.function.BiConsumer
 
-import org.neo4j.kernel.impl.util.{NodeProxyWrappingNodeValue, RelationshipProxyWrappingValue}
+import org.neo4j.kernel.impl.core.EmbeddedProxySPI
+import org.neo4j.kernel.impl.util.RelationshipProxyWrappingValue
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable._
-import org.neo4j.values.virtual.{ListValue, MapValue}
+import org.neo4j.values.virtual.{ListValue, MapValue, NodeValue}
 
 import scala.collection.mutable
 
-object valueHelper {
+case class ValueHelper(entityAccessor: EmbeddedProxySPI) {
   def fromValue(value: AnyValue): Any = value match {
     case s: TextValue => s.stringValue()
     case b: BooleanValue => b.booleanValue()
@@ -42,7 +43,7 @@ object valueHelper {
       })
       map.toMap
     }
-    case n: NodeProxyWrappingNodeValue => n.nodeProxy()
+    case n: NodeValue => entityAccessor.newNodeProxy(n.id())
     case n: RelationshipProxyWrappingValue => n.relationshipProxy()
     case a: ListValue => Vector(a.asArray().map(fromValue): _*)
     case Values.NO_VALUE => null

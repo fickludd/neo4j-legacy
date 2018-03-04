@@ -135,6 +135,8 @@ trait Compatibility {
     override val plannerInfo = new PlannerInfo(inner.plannerUsed.name, inner.runtimeUsed.name, emptyList[IndexUsage])
 
     override def run(transactionalContext: TransactionalContextWrapper, executionMode: CypherExecutionMode, params: MapValue): Result = {
+      val entityAccessor = transactionalContext.graph.getDependencyResolver.resolveDependency(classOf[EmbeddedProxySPI])
+      val valueHelper = ValueHelper(entityAccessor)
       var map: mutable.Map[String, Any] = mutable.Map[String, Any]()
       params.foreach(new BiConsumer[String, AnyValue] {
         override def accept(t: String, u: AnyValue): Unit = map.put(t, valueHelper.fromValue(u))

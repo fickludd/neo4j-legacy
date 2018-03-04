@@ -33,7 +33,7 @@ class PatternMatchingBuilder(patternGraph: PatternGraph,
                              variablesInClause: Set[String]) extends MatcherBuilder {
   def getMatches(sourceRow: ExecutionContext, state:QueryState): Traversable[ExecutionContext] = {
     val bindings: Map[String, AnyValue] =
-      sourceRow.boundEntities(state.query.nodeOps.getById, state.query.relationshipOps.getById)
+      sourceRow.boundEntities(state.query.relationshipOps.getById)
     val boundPairs: Map[String, Set[MatchingPair]] = extractBoundMatchingPairs(bindings)
 
     val undirectedBoundRelationships: Iterable[PatternRelationship] = bindings.keys.

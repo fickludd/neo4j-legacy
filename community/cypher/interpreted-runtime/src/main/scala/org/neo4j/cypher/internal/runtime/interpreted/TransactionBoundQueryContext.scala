@@ -63,10 +63,9 @@ import org.neo4j.kernel.impl.coreapi.PropertyContainerLocker
 import org.neo4j.kernel.impl.locking.ResourceTypes
 import org.neo4j.kernel.impl.query.Neo4jTransactionalContext
 import org.neo4j.kernel.impl.util.ValueUtils.{fromNodeProxy, fromRelationshipProxy}
-import org.neo4j.kernel.impl.util.{DefaultValueMapper, NodeProxyWrappingNodeValue, RelationshipProxyWrappingValue}
-import org.neo4j.values.storable.CoordinateReferenceSystem.{Cartesian, WGS84}
+import org.neo4j.kernel.impl.util.{DefaultValueMapper, RelationshipProxyWrappingValue}
 import org.neo4j.values.storable.{PointValue, TextValue, Value, Values, _}
-import org.neo4j.values.virtual.{ListValue, NodeValue, RelationshipValue, VirtualValues}
+import org.neo4j.values.virtual._
 import org.neo4j.values.{AnyValue, ValueMapper}
 
 import scala.collection.Iterator
@@ -135,9 +134,33 @@ sealed class TransactionBoundQueryContext(val transactionalContext: Transactiona
     }
   }
 
-  override def createNode(): Node = entityAccessor.newNodeProxy(writes().nodeCreate())
-
   override def createNodeId(): Long = writes().nodeCreate()
+
+  override def fullNode(node: NodeReference): NodeFullValue = {
+    val cursor = nodeCursor
+    reads().singleNode(node.id(), cursor)
+    if (!cursor.next()) {
+      VirtualValues.nodeValue(node.id(), Values.stringArray(), VirtualValues.EMPTY_MAP)
+    } else {
+      val labelSet = cursor.labels()
+      val labelArray = new Array[String](labelSet.numberOfLabels())
+      var i = 0
+      while (i < labelSet.numberOfLabels()) {
+        labelArray(i) = tokenRead.nodeLabelName(labelSet.label(i))
+        i += 1
+      }
+
+      val property = propertyCursor
+      cursor.properties(property)
+      val properties = new java.util.HashMap[String,AnyValue]()
+      while (property.next()) {
+        val propertyKey = tokenRead.propertyKeyName(property.propertyKey())
+        properties.put(propertyKey, property.propertyValue())
+      }
+
+      VirtualValues.nodeValue(node.id(), Values.stringArray(labelArray:_*), VirtualValues.map(properties))
+    }
+  }
 
   override def createRelationship(start: Long, end: Long, relType: Int): RelationshipValue = {
     val relId = transactionalContext.statement.dataWriteOperations().relationshipCreate(relType, start, end)
@@ -349,7 +372,7 @@ sealed class TransactionBoundQueryContext(val transactionalContext: Transactiona
     reads().nodeIndexSeek(index, nodeCursor, IndexOrder.NONE, query:_*)
     new CursorIterator[NodeValue] {
       override protected def fetchNext(): NodeValue = {
-        if (nodeCursor.next()) fromNodeProxy(entityAccessor.newNodeProxy(nodeCursor.nodeReference()))
+        if (nodeCursor.next()) VirtualValues.node(nodeCursor.nodeReference())
         else null
       }
 
@@ -479,7 +502,7 @@ sealed class TransactionBoundQueryContext(val transactionalContext: Transactiona
     reads().nodeLabelScan(id, cursor)
     new CursorIterator[NodeValue] {
       override protected def fetchNext(): NodeValue = {
-        if (cursor.next()) fromNodeProxy(entityAccessor.newNodeProxy(cursor.nodeReference()))
+        if (cursor.next()) VirtualValues.node(cursor.nodeReference())
         else null
       }
       override protected def close(): Unit = cursor.close()
@@ -536,9 +559,8 @@ sealed class TransactionBoundQueryContext(val transactionalContext: Transactiona
 
   override def asObject(value: AnyValue): Any = {
     value match {
-      case node: NodeProxyWrappingNodeValue => node.nodeProxy
       case edge: RelationshipProxyWrappingValue => edge.relationshipProxy
-      case _ => withAnyOpenQueryContext(_=>value.map(valueMapper))
+      case _ => withAnyOpenQueryContext(_ => value.map(valueMapper))
     }
   }
 
@@ -614,18 +636,15 @@ sealed class TransactionBoundQueryContext(val transactionalContext: Transactiona
       }
     }
 
-    override def getById(id: Long): NodeValue = try {
-      fromNodeProxy(entityAccessor.newNodeProxy(id))
-    } catch {
-      case e: NotFoundException => throw new EntityNotFoundException(s"Node with id $id", e)
-    }
+    // TODO: can we just remove this method?
+    override def getById(id: Long): NodeValue = VirtualValues.node(id)
 
     override def all: Iterator[NodeValue] = {
       val nodeCursor = allocateAndTraceNodeCursor()
       reads().allNodesScan(nodeCursor)
       new CursorIterator[NodeValue] {
         override protected def fetchNext(): NodeValue = {
-          if (nodeCursor.next()) fromNodeProxy(entityAccessor.newNodeProxy(nodeCursor.nodeReference()))
+          if (nodeCursor.next()) VirtualValues.node(nodeCursor.nodeReference())
           else null
         }
 
@@ -897,9 +916,9 @@ sealed class TransactionBoundQueryContext(val transactionalContext: Transactiona
       }
   }
 
-  override def edgeGetStartNode(edge: RelationshipValue) = edge.startNode()
+  override def edgeGetStartNode(edge: RelationshipValue): NodeValue = edge.startNode()
 
-  override def edgeGetEndNode(edge: RelationshipValue) = edge.endNode()
+  override def edgeGetEndNode(edge: RelationshipValue): NodeValue = edge.endNode()
 
   private lazy val tokenNameLookup = new SilentTokenNameLookup(transactionalContext.kernelTransaction.tokenRead())
 

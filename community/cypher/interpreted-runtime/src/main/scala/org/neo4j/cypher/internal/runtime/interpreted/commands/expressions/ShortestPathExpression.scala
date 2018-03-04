@@ -29,7 +29,7 @@ import org.neo4j.graphdb.{Path, PropertyContainer, Relationship}
 import org.neo4j.kernel.impl.util.ValueUtils
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
-import org.neo4j.values.virtual.{NodeReference, NodeValue, VirtualValues}
+import org.neo4j.values.virtual.{NodeValue, VirtualValues}
 
 import scala.collection.JavaConverters._
 import scala.collection.Map
@@ -98,7 +98,6 @@ case class ShortestPathExpression(shortestPathPattern: ShortestPath,
       throw new SyntaxException(
         s"To find a shortest path, both ends of the path need to be provided. Couldn't find `$start`")) match {
       case node: NodeValue => node
-      case node: NodeReference => state.query.nodeOps.getById(node.id())
     }
 
   private def anyStartpointsContainNull(m: Map[String, Any]): Boolean =

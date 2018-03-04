@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.util.v3_4.InternalException
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.cypher.internal.v3_4.expressions.SemanticDirection
 import org.neo4j.values.storable.{Value, Values}
-import org.neo4j.values.virtual.{RelationshipValue, NodeReference, NodeValue}
+import org.neo4j.values.virtual.{RelationshipValue, NodeValue}
 
 /**
   * This implementation of pruning-var-expand is no longer used in production, but is used to testing purposes.
@@ -277,9 +277,6 @@ case class LegacyPruningVarLengthExpandPipe(source: Pipe,
         val row = input.next()
         row.get(fromName) match {
           case Some(node: NodeValue) =>
-            nextState(row, node)
-          case Some(nodeRef: NodeReference) =>
-            val node = state.query.nodeOps.getById(nodeRef.id())
             nextState(row, node)
           case Some(x: Value) if x == Values.NO_VALUE =>
             (Empty, null)

@@ -21,6 +21,8 @@ package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
 import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, MutableMaps}
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
+import org.neo4j.values.AnyValue
+import org.neo4j.values.virtual.NodeReference
 
 case class ProduceResultsPipe(source: Pipe, columns: Seq[String])
                              (val id: Id = Id.INVALID_ID) extends PipeWithSource(source) {
@@ -32,10 +34,19 @@ case class ProduceResultsPipe(source: Pipe, columns: Seq[String])
       original =>
         val m = MutableMaps.create(columns.size)
         columns.foreach {
-          case (name) => m.put(name, original(name))
+          case (name) =>
+            val value = original(name)
+            m.put(name, ensureMaterialized(state, value))
         }
 
         ExecutionContext(m)
     }
   }
+
+  private def ensureMaterialized(state: QueryState, value: AnyValue): AnyValue =
+    value match {
+      case ref: NodeReference =>
+        state.query.fullNode(ref)
+      case x: AnyValue => x
+    }
 }

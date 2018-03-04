@@ -26,10 +26,9 @@ import org.neo4j.cypher.internal.util.v3_4.{CypherTypeException, InvalidSemantic
 import org.neo4j.cypher.internal.runtime.interpreted._
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
-import org.neo4j.kernel.impl.util.ValueUtils
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
-import org.neo4j.values.virtual.{RelationshipValue, NodeValue}
+import org.neo4j.values.virtual.{NodeValue, RelationshipValue, VirtualValues}
 
 abstract class BaseCreateNodePipe(src: Pipe, key: String, labels: Seq[LazyLabel], properties: Option[Expression])
   extends PipeWithSource(src) with GraphElementPropertyFunctions {
@@ -38,10 +37,10 @@ abstract class BaseCreateNodePipe(src: Pipe, key: String, labels: Seq[LazyLabel]
     input.map(createNode(_, state))
 
   private def createNode(context: ExecutionContext, state: QueryState): ExecutionContext = {
-    val node = state.query.createNode()
-    setProperties(context, state, node.getId)
-    setLabels(context, state, node.getId)
-    context += key -> ValueUtils.fromNodeProxy(node)
+    val nodeId = state.query.createNodeId()
+    setProperties(context, state, nodeId)
+    setLabels(context, state, nodeId)
+    context += key -> VirtualValues.node(nodeId)
   }
 
   private def setProperties(context: ExecutionContext, state: QueryState, nodeId: Long) = {

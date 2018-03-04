@@ -90,14 +90,14 @@ public class VirtualValueWriteToTest
                 ),
                 shouldWrite(
                         VirtualValues.path(
-                                new NodeValue[]{nodeValue( 20L, stringArray( "L" ), emptyMap() ),
+                                new NodeFullValue[]{nodeValue( 20L, stringArray( "L" ), emptyMap() ),
                                         nodeValue( 40L, stringArray( "L" ), emptyMap() )},
                                 new RelationshipValue[]{
                                         relationshipValue( 100L, nodeValue( 40L, stringArray( "L" ), emptyMap() ),
                                                 nodeValue( 20L, stringArray( "L" ), emptyMap() ),
                                                 stringValue( "T" ), emptyMap() )} ),
                         writePath(
-                                new NodeValue[]{nodeValue( 20L, stringArray( "L" ), emptyMap() ),
+                                new NodeFullValue[]{nodeValue( 20L, stringArray( "L" ), emptyMap() ),
                                         nodeValue( 40L, stringArray( "L" ), emptyMap() )},
                                 new RelationshipValue[]{
                                         relationshipValue( 100L, nodeValue( 40L, stringArray( "L" ), emptyMap() ),

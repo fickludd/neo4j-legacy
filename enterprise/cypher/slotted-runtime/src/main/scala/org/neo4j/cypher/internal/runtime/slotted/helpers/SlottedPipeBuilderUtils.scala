@@ -26,7 +26,7 @@ import org.neo4j.cypher.internal.util.v3_4.{InternalException, ParameterWrongTyp
 import org.neo4j.cypher.internal.util.v3_4.symbols.{CTNode, CTRelationship, CypherType}
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
-import org.neo4j.values.virtual.{VirtualRelationshipValue, VirtualNodeValue, VirtualValues}
+import org.neo4j.values.virtual.{VirtualRelationshipValue, NodeValue, VirtualValues}
 
 object SlottedPipeBuilderUtils {
   // TODO: Check if having try/catch blocks inside some of these generated functions prevents inlining or other JIT optimizations
@@ -84,7 +84,7 @@ object SlottedPipeBuilderUtils {
         (context: ExecutionContext) =>
           val value = context.getRefAt(offset)
           try {
-            value.asInstanceOf[VirtualNodeValue].id()
+            value.asInstanceOf[NodeValue].id()
           } catch {
             case _: java.lang.ClassCastException =>
               throw new ParameterWrongTypeException(s"Expected to find a node at ref slot $offset but found $value instead")
@@ -107,7 +107,7 @@ object SlottedPipeBuilderUtils {
             if (value == Values.NO_VALUE)
               -1L
             else
-              value.asInstanceOf[VirtualNodeValue].id()
+              value.asInstanceOf[NodeValue].id()
           } catch {
             case _: java.lang.ClassCastException =>
               throw new ParameterWrongTypeException(s"Expected to find a node at ref slot $offset but found $value instead")
@@ -153,7 +153,7 @@ object SlottedPipeBuilderUtils {
       case LongSlot(offset, false, CTNode) =>
         (context: ExecutionContext, value: AnyValue) =>
           try {
-            context.setLongAt(offset, value.asInstanceOf[VirtualNodeValue].id())
+            context.setLongAt(offset, value.asInstanceOf[NodeValue].id())
           } catch {
             case _: java.lang.ClassCastException =>
               throw new ParameterWrongTypeException(s"Expected to find a node at long slot $offset but found $value instead")
@@ -174,7 +174,7 @@ object SlottedPipeBuilderUtils {
             context.setLongAt(offset, -1L)
           else {
             try {
-              context.setLongAt(offset, value.asInstanceOf[VirtualNodeValue].id())
+              context.setLongAt(offset, value.asInstanceOf[NodeValue].id())
             } catch {
               case _: java.lang.ClassCastException =>
                 throw new ParameterWrongTypeException(s"Expected to find a node at long slot $offset but found $value instead")

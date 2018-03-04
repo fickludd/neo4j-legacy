@@ -20,66 +20,54 @@
 package org.neo4j.values.virtual;
 
 
-import org.neo4j.values.AnyValueWriter;
-import org.neo4j.values.storable.TextArray;
+import java.util.Comparator;
 
-import static java.lang.String.format;
+import org.neo4j.values.AnyValue;
+import org.neo4j.values.ValueMapper;
+import org.neo4j.values.VirtualValue;
 
-public abstract class NodeValue extends VirtualNodeValue
+public abstract class NodeValue extends VirtualValue
 {
-    private final long id;
-
-    protected NodeValue( long id )
-    {
-        this.id = id;
-    }
-
-    public abstract TextArray labels();
-
-    public abstract MapValue properties();
+    public abstract long id();
 
     @Override
-    public <E extends Exception> void writeTo( AnyValueWriter<E> writer ) throws E
+    public int compareTo( VirtualValue other, Comparator<AnyValue> comparator )
     {
-        writer.writeNode( id, labels(), properties() );
+        if ( !(other instanceof NodeValue) )
+        {
+            throw new IllegalArgumentException( "Cannot compare different virtual values" );
+        }
+
+        NodeValue otherNode = (NodeValue) other;
+        return Long.compare( id(), otherNode.id() );
     }
 
     @Override
-    public long id()
+    public int computeHash()
     {
-        return id;
+        return Long.hashCode( id() );
     }
 
     @Override
-    public String toString()
+    public <T> T map( ValueMapper<T> mapper )
     {
-        return format( "(%d)", id );
+        return mapper.mapNode( this );
     }
 
-    static class DirectNodeValue extends NodeValue
+    @Override
+    public boolean equals( VirtualValue other )
     {
-        private final TextArray labels;
-        private final MapValue properties;
-
-        DirectNodeValue( long id, TextArray labels, MapValue properties )
+        if ( !(other instanceof NodeValue) )
         {
-            super( id );
-            assert labels != null;
-            assert properties != null;
-            this.labels = labels;
-            this.properties = properties;
+            return false;
         }
+        NodeValue that = (NodeValue) other;
+        return id() == that.id();
+    }
 
-        @Override
-        public TextArray labels()
-        {
-            return labels;
-        }
-
-        @Override
-        public MapValue properties()
-        {
-            return properties;
-        }
+    @Override
+    public VirtualValueGroup valueGroup()
+    {
+        return VirtualValueGroup.NODE;
     }
 }
