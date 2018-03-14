@@ -49,7 +49,7 @@ public class NumberValuesTest
     @Test
     public void shouldHandleNaNCorrectly()
     {
-        assertIncomparable( toAnyValue(Double.NaN), toAnyValue( Double.NaN ) );
+        assertIncomparable( toAnyValue( Double.NaN ), toAnyValue( Double.NaN ) );
         assertIncomparable( toAnyValue( 1 ), toAnyValue( Double.NaN ) );
         assertIncomparable( toAnyValue( Double.NaN ), toAnyValue( 1 ) );
     }

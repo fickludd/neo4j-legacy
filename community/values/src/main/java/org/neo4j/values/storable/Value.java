@@ -160,14 +160,9 @@ public abstract class Value extends AnyValue
         }
         if ( other instanceof Value && ((Value) other).valueGroup() == valueGroup() )
         {
-            Value otherValue = (Value) other;
-            if ( this.isNaN() || otherValue.isNaN() )
-            {
-                return null;
-            }
-            return equals( otherValue );
+            return equals( other );
         }
-        return Boolean.FALSE;
+        return null;
     }
 
     abstract int unsafeCompareTo( Value other );
@@ -216,9 +211,4 @@ public abstract class Value extends AnyValue
     public abstract ValueGroup valueGroup();
 
     public abstract NumberType numberType();
-
-    public boolean isNaN()
-    {
-        return false;
-    }
 }

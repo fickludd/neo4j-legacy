@@ -22,6 +22,7 @@ package org.neo4j.values.utils;
 import java.util.function.Supplier;
 
 import org.neo4j.values.AnyValue;
+import org.neo4j.values.AnyValues;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -52,9 +53,11 @@ public class AnyValueTestUtil
     public static void assertEqualValues( AnyValue a, AnyValue b )
     {
         assertTrue( a + " should be equivalent to " + b, a.equals( b ) );
-        assertTrue( a + " should be equivalent to " + b, b.equals( a ) );
+        assertTrue( b + " should be equivalent to " + a, b.equals( a ) );
         assertTrue( a + " should be equal to " + b, a.ternaryEquals( b ) );
-        assertTrue( a + " should be equal to " + b, b.ternaryEquals( a ) );
+        assertTrue( b + " should be equal to " + a, b.ternaryEquals( a ) );
+        assertTrue( a + " should compare to " + b, AnyValues.COMPARATOR.compare( a, b ) == 0 );
+        assertTrue( b + " should compare to " + a, AnyValues.COMPARATOR.compare( b, a ) == 0 );
     }
 
     public static void assertNotEqual( AnyValue a, AnyValue b )
@@ -63,6 +66,8 @@ public class AnyValueTestUtil
         assertFalse( b + " should not be equivalent to " + a, b.equals( a ) );
         assertFalse( a + " should not equal " + b, a.ternaryEquals( b ) );
         assertFalse( b + " should not equal " + a, b.ternaryEquals( a ) );
+        assertTrue( a + " should not compare to " + b, AnyValues.COMPARATOR.compare( a, b ) != 0 );
+        assertTrue( b + " should not compare to " + a, AnyValues.COMPARATOR.compare( b, a ) != 0 );
     }
 
     public static void assertIncomparable( AnyValue a, AnyValue b )
@@ -71,6 +76,8 @@ public class AnyValueTestUtil
         assertFalse( b + " should not be equivalent to " + a, b.equals( a ) );
         assertNull( a + " should be incomparable to " + b, a.ternaryEquals( b ) );
         assertNull( b + " should be incomparable to " + a, b.ternaryEquals( a ) );
+        assertNull( a + " should not compare to " + b, AnyValues.TERNARY_COMPARATOR.ternaryCompare( a, b ) );
+        assertNull( b + " should not compare to " + a, AnyValues.TERNARY_COMPARATOR.ternaryCompare( b, a ) );
     }
 
     public static <X extends Exception, T> X assertThrows( Class<X> exception, Supplier<T> thunk )

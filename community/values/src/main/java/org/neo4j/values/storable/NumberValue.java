@@ -49,6 +49,16 @@ public abstract class NumberValue extends ScalarValue
 
     abstract int compareTo( FloatingPointValue other );
 
+    Integer unsafeTernaryCompareTo( Value other )
+    {
+        NumberValue otherNumber = (NumberValue) other;
+        if ( isNaN() || otherNumber.isNaN() )
+        {
+            return null;
+        }
+        return unsafeCompareTo( other );
+    }
+
     @Override
     int unsafeCompareTo( Value otherValue )
     {
@@ -91,6 +101,21 @@ public abstract class NumberValue extends ScalarValue
     public final boolean equals( String x )
     {
         return false;
+    }
+
+    @Override
+    public Boolean ternaryEquals( AnyValue other )
+    {
+        if ( other instanceof NumberValue )
+        {
+            NumberValue otherNumber = (NumberValue) other;
+            if ( isNaN() || otherNumber.isNaN() )
+            {
+                return null;
+            }
+            return equals( otherNumber );
+        }
+        return null;
     }
 
     @Override
@@ -177,5 +202,10 @@ public abstract class NumberValue extends ScalarValue
         {
             throw new IllegalArgumentException( "Cannot divide by " + numberValue );
         }
+    }
+
+    boolean isNaN()
+    {
+        return false;
     }
 }

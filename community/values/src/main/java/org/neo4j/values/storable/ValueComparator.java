@@ -58,16 +58,11 @@ class ValueComparator implements Comparator<Value>, TernaryComparator<Value>
     {
         assert v1 != null && v2 != null : "null values are not supported, use NoValue.NO_VALUE instead";
 
-        ValueGroup id1 = v1.valueGroup();
-        ValueGroup id2 = v2.valueGroup();
-
-        int x = valueGroupComparator.compare( id1, id2 );
-
-        if ( x == 0 )
+        if ( v1.valueGroup() == v2.valueGroup() )
         {
             return v1.unsafeTernaryCompareTo( v2 );
         }
-        return x;
+        return null;
     }
 
     @Override
