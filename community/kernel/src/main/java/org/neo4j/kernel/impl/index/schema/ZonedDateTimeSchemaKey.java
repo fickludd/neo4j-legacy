@@ -44,8 +44,8 @@ class ZonedDateTimeSchemaKey extends ComparableNativeSchemaKey<ZonedDateTimeSche
             Integer.BYTES + /* timeZone */
             Long.BYTES;     /* entityId */
 
-    int nanoOfSecond;
     long epochSecondUTC;
+    int nanoOfSecond;
     short zoneId;
     int zoneOffsetSeconds;
 
@@ -54,7 +54,7 @@ class ZonedDateTimeSchemaKey extends ComparableNativeSchemaKey<ZonedDateTimeSche
     {
         return TimeZones.validZoneId( zoneId ) ?
             DateTimeValue.datetime( epochSecondUTC, nanoOfSecond, ZoneId.of( TimeZones.map( zoneId ) ) ) :
-            DateTimeValue.datetime( epochSecondUTC, nanoOfSecond, ZoneOffset.ofTotalSeconds( zoneOffsetSeconds ) );
+            DateTimeValue.datetime( epochSecondUTC, nanoOfSecond, ZoneOffset.ofTotalSeconds( zoneOffsetSeconds * 60 ) );
     }
 
     @Override
@@ -96,7 +96,7 @@ class ZonedDateTimeSchemaKey extends ComparableNativeSchemaKey<ZonedDateTimeSche
     public String toString()
     {
         return format( "value=%s,entityId=%d,epochSecond=%d,nanoOfSecond=%d,zoneId=%d,zoneOffset=%d",
-                asValue(), getEntityId(), epochSecondUTC, nanoOfSecond, zoneId, zoneOffsetSeconds );
+                asValue(), getEntityId(), epochSecondUTC, nanoOfSecond, zoneId, zoneOffsetSeconds * 60 );
     }
 
     @Override
@@ -104,7 +104,7 @@ class ZonedDateTimeSchemaKey extends ComparableNativeSchemaKey<ZonedDateTimeSche
     {
         this.epochSecondUTC = epochSecondUTC;
         this.nanoOfSecond = nano;
-        this.zoneOffsetSeconds = offsetSeconds;
+        this.zoneOffsetSeconds = offsetSeconds / 60;
         this.zoneId = -1;
     }
 
@@ -132,7 +132,7 @@ class ZonedDateTimeSchemaKey extends ComparableNativeSchemaKey<ZonedDateTimeSche
     private boolean differentValidZoneOffset( ZonedDateTimeSchemaKey other )
     {
         return zoneOffsetSeconds != other.zoneOffsetSeconds &&
-                TimeZones.validZoneOffset( zoneOffsetSeconds ) && TimeZones.validZoneOffset( other.zoneOffsetSeconds );
+                TimeZones.validZoneOffset( zoneOffsetSeconds * 60 ) && TimeZones.validZoneOffset( other.zoneOffsetSeconds * 60 );
     }
 
     // We need to check validity upfront without throwing exceptions, because the PageCursor might give garbage bytes
