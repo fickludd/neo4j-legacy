@@ -27,9 +27,8 @@ import java.util.List;
 import org.neo4j.cypher.internal.runtime.columns.FlagColumn;
 import org.neo4j.cypher.internal.runtime.columns.ReferenceColumn;
 import org.neo4j.cypher.internal.runtime.executable.ExecutableAllNodeScan;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Transaction;
+import org.neo4j.cypher.internal.runtime.executable.ExecutableExpandAll;
+import org.neo4j.graphdb.*;
 import org.neo4j.internal.kernel.api.KernelAPIReadTestBase;
 import org.neo4j.internal.kernel.api.NodeCursor;
 import org.neo4j.kernel.impl.newapi.ReadTestSupport;
@@ -55,7 +54,7 @@ public class RuntimeTest extends KernelAPIReadTestBase<ReadTestSupport>
         NODE_IDS = new ArrayList<>();
         try ( Transaction tx = graphDb.beginTx() )
         {
-            for ( int i = 0; i < 16; i++ )
+            for ( int i = 0; i < 18; i++ )
             {
                 NODE_IDS.add( graphDb.createNode().getId() );
             }
@@ -63,6 +62,34 @@ public class RuntimeTest extends KernelAPIReadTestBase<ReadTestSupport>
 
             tx.success();
         }
+
+        try ( Transaction tx = graphDb.beginTx() )
+        {
+            for ( int i = 0; i < NODE_IDS.size(); i++ )
+            {
+                long id = NODE_IDS.get(i);
+                switch (i % 3) {
+                case 0:
+                    relate(graphDb, i, (i+3)%NODE_IDS.size());
+                    relate(graphDb, i, (i+2)%NODE_IDS.size());
+
+                case 1:
+                    relate(graphDb, i, (i+1)%NODE_IDS.size());
+
+                case 2:
+                }
+
+            }
+
+            tx.success();
+        }
+    }
+
+    private void relate( GraphDatabaseService graphDb, int a, int b )
+    {
+        Node node1 = graphDb.getNodeById( NODE_IDS.get(a) );
+        Node node2 = graphDb.getNodeById( NODE_IDS.get(b) );
+        node1.createRelationshipTo( node2, RelationshipType.withName( "R" ) );
     }
 
     @Test
@@ -93,7 +120,7 @@ public class RuntimeTest extends KernelAPIReadTestBase<ReadTestSupport>
     }
 
     @Test
-    public void labelFilter()
+    public void expandAll()
     {
         // given
         ColumnId n = new ColumnId( "n" );
@@ -104,13 +131,16 @@ public class RuntimeTest extends KernelAPIReadTestBase<ReadTestSupport>
         read.allNodesScan( scanCursor );
         ExecutableAllNodeScan scan = new ExecutableAllNodeScan( scanCursor, n, nLabels, nEdges, nProperties );
 
+        ColumnId rGroup = new ColumnId( "rGroupRef" );
+        ColumnId rRef = new ColumnId( "rRef" );
+        ColumnId n2 = new ColumnId( "n2" );
+        ExecutableExpandAll expand = new ExecutableExpandAll(
+                cursors.allocateRelationshipGroupCursor(),
+                rGroup, rRef, n2 );
+        scan.next = expand;
+
         Collector collector = new Collector();
-
-//        LabelSet labelSet = null;
-//        ExecutableHasLabel filter =
-//                new ExecutableHasLabel( LABEL, nLabels, labelSet, read );
-
-        scan.next = collector;
+        expand.next = collector;
 
         // when
         Morsel morsel = new Morsel( 100 );
