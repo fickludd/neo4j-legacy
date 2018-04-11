@@ -366,6 +366,10 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     @Override
     public SecurityContext securityContext()
     {
+        if ( securityContext == null )
+        {
+            throw new NotInTransactionException();
+        }
         return securityContext;
     }
 
@@ -828,6 +832,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
 
     public StatementLocks statementLocks()
     {
+        assertOpen();
         return statementLocks;
     }
 
