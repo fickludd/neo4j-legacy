@@ -23,7 +23,7 @@ import org.neo4j.collection.primitive.PrimitiveLongSet
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.PathValueBuilder
 import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.{InCheckContainer, SingleThreadedLRUCache}
 import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, MapExecutionContext, MutableMaps}
-import org.neo4j.cypher.internal.runtime.{QueryContext, QueryStatistics}
+import org.neo4j.cypher.internal.runtime.{QueryContext, QueryExecutionState, QueryStatistics}
 import org.neo4j.cypher.internal.util.v3_4.ParameterNotFoundException
 import org.neo4j.values.AnyValue
 import org.neo4j.values.virtual.MapValue
@@ -39,7 +39,7 @@ class QueryState(val query: QueryContext,
                  val triadicState: mutable.Map[String, PrimitiveLongSet] = mutable.Map.empty,
                  val repeatableReads: mutable.Map[Pipe, Seq[ExecutionContext]] = mutable.Map.empty,
                  val cachedIn: SingleThreadedLRUCache[Any, InCheckContainer] =
-                 new SingleThreadedLRUCache(maxSize = 16)) {
+                 new SingleThreadedLRUCache(maxSize = 16)) extends QueryExecutionState {
 
   private var _pathValueBuilder: PathValueBuilder = _
   private var _exFactory: ExecutionContextFactory = _
