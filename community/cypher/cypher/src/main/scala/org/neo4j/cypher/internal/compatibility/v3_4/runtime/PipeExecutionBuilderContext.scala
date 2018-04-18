@@ -19,14 +19,9 @@
  */
 package org.neo4j.cypher.internal.compatibility.v3_4.runtime
 
-import org.neo4j.cypher.internal.compiler.v3_4.planner.logical.Metrics
-import org.neo4j.cypher.internal.frontend.v3_4.PlannerName
 import org.neo4j.cypher.internal.frontend.v3_4.semantics.SemanticTable
 import org.neo4j.cypher.internal.planner.v3_4.spi.PlanningAttributes.{Cardinalities, ReadOnlies}
 
-case class PipeExecutionBuilderContext(cardinality: Metrics.CardinalityModel,
-                                       semanticTable: SemanticTable,
-                                       plannerName: PlannerName,
+case class PipeExecutionBuilderContext(semanticTable: SemanticTable,
                                        readOnlies: ReadOnlies,
-                                       cardinalities: Cardinalities
-                                      )
+                                       cardinalities: Cardinalities)
