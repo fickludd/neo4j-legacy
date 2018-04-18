@@ -17,11 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.cypher.internal.compatibility.v3_4.runtime
+package org.neo4j.cypher.internal.runtime.interpreted.commands
 
-import org.neo4j.cypher.internal.frontend.v3_4.semantics.SemanticTable
-import org.neo4j.cypher.internal.planner.v3_4.spi.PlanningAttributes.{Cardinalities, ReadOnlies}
+import org.neo4j.cypher.internal.planner.v3_4.spi.TokenContext
+import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
+import org.neo4j.cypher.internal.runtime.interpreted.commands.values.KeyToken
 
-case class PipeExecutionBuilderContext(semanticTable: SemanticTable,
-                                       readOnlies: ReadOnlies,
-                                       cardinalities: Cardinalities)
+object KeyTokenResolver {
+  /*this is what you should use!*/
+  def resolveExpressions(expr: Expression, ctx: TokenContext): Expression = expr match {
+    case (keyToken: KeyToken) => keyToken.resolve(ctx)
+    case _                    => expr
+  }
+}
