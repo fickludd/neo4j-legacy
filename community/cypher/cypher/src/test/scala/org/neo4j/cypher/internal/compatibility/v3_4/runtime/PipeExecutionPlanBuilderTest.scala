@@ -94,7 +94,7 @@ class PipeExecutionPlanBuilderTest extends CypherFunSuite with LogicalPlanningTe
     val plan = LeafPlan("a")
     val expectedPipe = LeafPipe("a")
 
-    val result = builder.build(None, plan)(pipeContext, tokenContext).pipe
+    val result = builder.build(plan)(pipeContext, tokenContext)
     result should equal(expectedPipe)
   }
 
@@ -120,7 +120,7 @@ class PipeExecutionPlanBuilderTest extends CypherFunSuite with LogicalPlanningTe
         )
       )
 
-    val result = builder.build(None, plan)(pipeContext, tokenContext).pipe
+    val result = builder.build(plan)(pipeContext, tokenContext)
     result should equal(expectedPipe)
   }
 
@@ -149,7 +149,7 @@ class PipeExecutionPlanBuilderTest extends CypherFunSuite with LogicalPlanningTe
         )
       )
 
-    val result = builder.build(None, plan)(pipeContext, tokenContext).pipe
+    val result = builder.build(plan)(pipeContext, tokenContext)
     result should equal(expectedPipe)
   }
 
@@ -170,7 +170,7 @@ class PipeExecutionPlanBuilderTest extends CypherFunSuite with LogicalPlanningTe
                         OneChildPipe("b", LeafPipe("d")),
                         TwoChildPipe("c", LeafPipe("e"), LeafPipe("f")))
 
-    val result = builder.build(None, plan)(pipeContext, tokenContext).pipe
+    val result = builder.build(plan)(pipeContext, tokenContext)
     result should equal(expectedPipe)
   }
 }
