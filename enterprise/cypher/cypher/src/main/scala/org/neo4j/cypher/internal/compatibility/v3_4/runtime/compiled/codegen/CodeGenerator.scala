@@ -31,7 +31,7 @@ import org.neo4j.cypher.internal.compatibility.v3_4.runtime.executionplan.{PlanF
 import org.neo4j.cypher.internal.compiler.v3_4.planner.CantCompileQueryException
 import org.neo4j.cypher.internal.frontend.v3_4.PlannerName
 import org.neo4j.cypher.internal.frontend.v3_4.semantics.SemanticTable
-import org.neo4j.cypher.internal.planner.v3_4.spi.PlanningAttributes.{Cardinalities, ReadOnlies}
+import org.neo4j.cypher.internal.planner.v3_4.spi.PlanningAttributes.Cardinalities
 import org.neo4j.cypher.internal.planner.v3_4.spi.{InstrumentedGraphStatistics, PlanContext}
 import org.neo4j.cypher.internal.runtime.planDescription.InternalPlanDescription.Arguments.{Runtime, RuntimeImpl}
 import org.neo4j.cypher.internal.runtime.planDescription.{InternalPlanDescription, LogicalPlan2PlanDescription}
@@ -43,14 +43,22 @@ import org.neo4j.cypher.internal.v3_4.executionplan.{GeneratedQuery, GeneratedQu
 import org.neo4j.cypher.internal.v3_4.logical.plans.{LogicalPlan, ProduceResult}
 import org.neo4j.values.virtual.MapValue
 
-class CodeGenerator(val structure: CodeStructure[GeneratedQuery], clock: Clock, conf: CodeGenConfiguration = CodeGenConfiguration() ) {
+class CodeGenerator(val structure: CodeStructure[GeneratedQuery],
+                    clock: Clock,
+                    conf: CodeGenConfiguration = CodeGenConfiguration()) {
 
   import CodeGenerator.generateCode
 
   type PlanDescriptionProvider =
           (InternalPlanDescription) => (Provider[InternalPlanDescription], Option[QueryExecutionTracer])
 
-  def generate(plan: LogicalPlan, planContext: PlanContext, semanticTable: SemanticTable, plannerName: PlannerName, readOnlies: ReadOnlies, cardinalities: Cardinalities): CompiledPlan = {
+  def generate(plan: LogicalPlan,
+               planContext: PlanContext,
+               semanticTable: SemanticTable,
+               plannerName: PlannerName,
+               readOnly: Boolean,
+               cardinalities: Cardinalities
+              ): CompiledPlan = {
     plan match {
       case res: ProduceResult =>
         val query: CodeStructureResult[GeneratedQuery] = try {
@@ -69,7 +77,7 @@ class CodeGenerator(val structure: CodeStructure[GeneratedQuery], clock: Clock, 
 
         val description = new Provider[InternalPlanDescription] {
           override def get(): InternalPlanDescription = {
-            val d = LogicalPlan2PlanDescription(plan, plannerName, readOnlies, cardinalities)
+            val d = LogicalPlan2PlanDescription(plan, plannerName, readOnly, cardinalities)
             query.code.foldLeft(d) {
               case (descriptionRoot, code) => descriptionRoot.addArgument(code)
             }.addArgument(Runtime(CompiledRuntimeName.toTextOutput))

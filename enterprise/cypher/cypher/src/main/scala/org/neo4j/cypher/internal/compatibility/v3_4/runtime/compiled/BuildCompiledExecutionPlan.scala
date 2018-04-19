@@ -31,7 +31,6 @@ import org.neo4j.cypher.internal.frontend.v3_4.PlannerName
 import org.neo4j.cypher.internal.frontend.v3_4.phases.CompilationPhaseTracer.CompilationPhase.CODE_GENERATION
 import org.neo4j.cypher.internal.frontend.v3_4.phases.Phase
 import org.neo4j.cypher.internal.planner.v3_4.spi.GraphStatistics
-import org.neo4j.cypher.internal.planner.v3_4.spi.PlanningAttributes.ReadOnlies
 import org.neo4j.cypher.internal.runtime._
 import org.neo4j.cypher.internal.runtime.planDescription.InternalPlanDescription
 import org.neo4j.cypher.internal.runtime.planDescription.InternalPlanDescription.Arguments
@@ -54,9 +53,13 @@ object BuildCompiledExecutionPlan extends Phase[EnterpriseRuntimeContext, Logica
   override def process(from: LogicalPlanState, context: EnterpriseRuntimeContext): CompilationState = {
     try {
       val codeGen = new CodeGenerator(context.codeStructure, context.clock, CodeGenConfiguration(context.debugOptions))
-      val readOnlies = new ReadOnlies
-      from.solveds.mapTo(readOnlies, _.readOnly)
-      val compiled: CompiledPlan = codeGen.generate(from.logicalPlan, context.planContext, from.semanticTable(), from.plannerName, readOnlies, from.cardinalities)
+      val readOnly = from.solveds(from.logicalPlan.id).readOnly
+      val compiled: CompiledPlan = codeGen.generate(from.logicalPlan,
+                                                    context.planContext,
+                                                    from.semanticTable(),
+                                                    from.plannerName,
+                                                    readOnly,
+                                                    from.cardinalities)
       val executionPlan: ExecutionPlan =
         new CompiledExecutionPlan(compiled,
                                   context.createFingerprintReference(compiled.fingerprint),

@@ -23,7 +23,7 @@ import org.neo4j.cypher.internal.compiler.v3_4.parser.ParserFixture
 import org.neo4j.cypher.internal.frontend.v3_4.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.util.v3_4.test_helpers.CypherTestSupport
 import org.neo4j.cypher.internal.ir.v3_4.PlannerQuery
-import org.neo4j.cypher.internal.planner.v3_4.spi.PlanningAttributes.{Cardinalities, ReadOnlies, Solveds}
+import org.neo4j.cypher.internal.planner.v3_4.spi.PlanningAttributes.{Cardinalities, Solveds}
 import org.neo4j.cypher.internal.util.v3_4.Cardinality
 import org.neo4j.cypher.internal.util.v3_4.attribution.{Id, SequentialIdGen}
 import scala.language.implicitConversions
@@ -39,16 +39,6 @@ trait LogicalPlanConstructionTestSupport extends CypherTestSupport {
     override def isDefinedAt(id: Id): Boolean = true
 
     override def get(id: Id): PlannerQuery = PlannerQuery.empty
-
-    override def copy(from: Id, to: Id): Unit = {}
-  }
-
-  class StubReadOnlies extends ReadOnlies {
-    override def set(id: Id, t: Boolean): Unit = {}
-
-    override def isDefinedAt(id: Id): Boolean = true
-
-    override def get(id: Id): Boolean = true
 
     override def copy(from: Id, to: Id): Unit = {}
   }
