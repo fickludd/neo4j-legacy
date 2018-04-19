@@ -19,6 +19,8 @@
  */
 package org.neo4j.cypher.internal.runtime
 
+import org.neo4j.cypher.internal.frontend.v3_4.semantics.SemanticTable
+import org.neo4j.cypher.internal.planner.v3_4.spi.TokenContext
 import org.neo4j.cypher.internal.util.v3_4.symbols.CypherType
 import org.neo4j.cypher.internal.v3_4.expressions.Expression
 import org.neo4j.cypher.internal.v3_4.logical.plans.LogicalPlan
@@ -40,7 +42,7 @@ import org.neo4j.values.virtual.MapValue
 trait Runtime[State <: QueryExecutionState] {
 
   def allocateExecutionState: QueryExecutionState
-  def compileToExecutable(query: String, logicalPlan: LogicalPlan, expressionTypes: ExpressionTypes): ExecutableQuery[State]
+  def compileToExecutable(query: String, logicalPlan: LogicalPlan, context: PhysicalCompilationContext): ExecutableQuery[State]
   def releaseExecutionState(executionState: QueryExecutionState): Unit
 }
 
@@ -109,8 +111,12 @@ trait QueryExecutionState
 /**
   * Really a semantic table.
   */
-trait ExpressionTypes {
+trait PhysicalCompilationContext {
   def typeFor(expression: Expression): CypherType
+  def semanticTable: SemanticTable
+  def readOnly: Boolean
+  def tokenContext: TokenContext
+  def periodicCommit: Option[Long]
 }
 
 /**
