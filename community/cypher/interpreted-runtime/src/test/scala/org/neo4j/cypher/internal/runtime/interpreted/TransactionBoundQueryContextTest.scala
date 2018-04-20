@@ -35,6 +35,7 @@ import org.neo4j.graphdb.factory.GraphDatabaseSettings
 import org.neo4j.internal.kernel.api.Transaction.Type
 import org.neo4j.internal.kernel.api.security.LoginContext
 import org.neo4j.internal.kernel.api.security.SecurityContext.AUTH_DISABLED
+import org.neo4j.internal.kernel.api.tracers.KernelTracer
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracerSupplier
 import org.neo4j.io.pagecache.tracing.cursor.context.EmptyVersionContextSupplier
 import org.neo4j.kernel.GraphDatabaseQueryService
@@ -242,7 +243,7 @@ class TransactionBoundQueryContextTest extends CypherFunSuite {
     val initSize = context.resources.allResources.size
 
     // WHEN
-    context.nodeOps.all
+    context.nodeOps.all(KernelTracer.NOOP)
 
     // THEN
     context.resources.allResources should have size initSize + 1
@@ -272,7 +273,7 @@ class TransactionBoundQueryContextTest extends CypherFunSuite {
     val initSize = context.resources.allResources.size
 
     // WHEN
-    context.nodeOps.all
+    context.nodeOps.all(KernelTracer.NOOP)
     context.resources.allResources should have size initSize + 1
     context.resources.close(success = true)
 

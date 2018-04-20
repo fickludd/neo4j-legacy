@@ -23,7 +23,9 @@ import org.mockito.Mockito
 import org.neo4j.cypher.internal.runtime.interpreted.ValueComparisonHelper._
 import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, QueryStateHelper}
 import org.neo4j.cypher.internal.runtime.{Operations, QueryContext}
+import org.neo4j.cypher.internal.util.v3_4.attribution.Id
 import org.neo4j.cypher.internal.util.v3_4.test_helpers.CypherFunSuite
+import org.neo4j.internal.kernel.api.tracers.KernelTracer
 import org.neo4j.values.virtual.NodeValue
 
 class AllNodesScanPipeTest extends CypherFunSuite {
@@ -36,13 +38,13 @@ class AllNodesScanPipeTest extends CypherFunSuite {
     // given
     val nodes = List(node1, node2)
     val nodeOps = mock[Operations[NodeValue]]
-    when(nodeOps.all).thenReturn(nodes.iterator).getMock[Operations[NodeValue]]
+    when(nodeOps.all(KernelTracer.NOOP)).thenReturn(nodes.iterator).getMock[Operations[NodeValue]]
     val queryContext = mock[QueryContext]
     when(queryContext.nodeOps).thenReturn(nodeOps)
     val queryState = QueryStateHelper.emptyWith(query = queryContext)
 
     // when
-    val result: Iterator[ExecutionContext] = AllNodesScanPipe("a")().createResults(queryState)
+    val result: Iterator[ExecutionContext] = AllNodesScanPipe("a")(Id(1)).createResults(queryState)
 
     // then
     result.toList should beEquivalentTo(List(Map("a" -> node1), Map("a" -> node2)))

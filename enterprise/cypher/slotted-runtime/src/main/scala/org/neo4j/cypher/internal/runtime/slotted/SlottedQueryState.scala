@@ -35,25 +35,26 @@ class SlottedQueryState(query: QueryContext,
                         params: MapValue,
                         decorator: PipeDecorator = NullPipeDecorator,
                         timeReader: TimeReader = new TimeReader,
+                        tracers: Tracers = new Tracers,
                         initialContext: Option[ExecutionContext] = None,
                         triadicState: mutable.Map[String, PrimitiveLongSet] = mutable.Map.empty,
                         repeatableReads: mutable.Map[Pipe, Seq[ExecutionContext]] = mutable.Map.empty,
                         cachedIn: SingleThreadedLRUCache[Any, InCheckContainer] =
                         new SingleThreadedLRUCache(maxSize = 16))
-  extends QueryState(query, resources, params, decorator, timeReader, initialContext, triadicState,
+  extends QueryState(query, resources, params, decorator, tracers, timeReader, initialContext, triadicState,
     repeatableReads, cachedIn) {
 
   override def createOrGetInitialContext(factory: ExecutionContextFactory): ExecutionContext =
     initialContext.getOrElse(factory.newExecutionContext())
 
   override def withDecorator(decorator: PipeDecorator) =
-    new SlottedQueryState(query, resources, params, decorator, timeReader, initialContext, triadicState, repeatableReads, cachedIn)
+    new SlottedQueryState(query, resources, params, decorator, timeReader, tracers, initialContext, triadicState, repeatableReads, cachedIn)
 
   override def withInitialContext(initialContext: ExecutionContext) =
-    new SlottedQueryState(query, resources, params, decorator, timeReader, Some(initialContext), triadicState, repeatableReads, cachedIn)
+    new SlottedQueryState(query, resources, params, decorator, timeReader, tracers, Some(initialContext), triadicState, repeatableReads, cachedIn)
 
   override def withQueryContext(query: QueryContext) =
-    new SlottedQueryState(query, resources, params, decorator, timeReader, initialContext, triadicState, repeatableReads, cachedIn)
+    new SlottedQueryState(query, resources, params, decorator, timeReader, tracers, initialContext, triadicState, repeatableReads, cachedIn)
 }
 
 case class SlottedExecutionContextFactory(slots: SlotConfiguration) extends ExecutionContextFactory {

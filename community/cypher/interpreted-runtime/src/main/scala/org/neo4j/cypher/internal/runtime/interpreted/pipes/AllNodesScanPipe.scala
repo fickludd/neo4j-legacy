@@ -26,7 +26,7 @@ case class AllNodesScanPipe(ident: String)(val id: Id = Id.INVALID_ID) extends P
 
   protected def internalCreateResults(state: QueryState): Iterator[ExecutionContext] = {
     val baseContext = state.createOrGetInitialContext(executionContextFactory)
-    state.query.nodeOps.all.map(n => executionContextFactory.copyWith(baseContext, ident, n))
+    state.query.nodeOps.all(state.tracers(id)).map(n => executionContextFactory.copyWith(baseContext, ident, n))
   }
 
 }

@@ -25,6 +25,8 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.{InChec
 import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, MapExecutionContext, MutableMaps}
 import org.neo4j.cypher.internal.runtime.{QueryContext, QueryStatistics}
 import org.neo4j.cypher.internal.util.v3_4.ParameterNotFoundException
+import org.neo4j.cypher.internal.util.v3_4.attribution.{Attribute, Id}
+import org.neo4j.internal.kernel.api.tracers.KernelTracer
 import org.neo4j.values.AnyValue
 import org.neo4j.values.virtual.MapValue
 
@@ -34,6 +36,7 @@ class QueryState(val query: QueryContext,
                  val resources: ExternalCSVResource,
                  val params: MapValue,
                  val decorator: PipeDecorator = NullPipeDecorator,
+                 val tracers: Tracers = new Tracers,
                  val timeReader: TimeReader = new TimeReader,
                  val initialContext: Option[ExecutionContext] = None,
                  val triadicState: mutable.Map[String, PrimitiveLongSet] = mutable.Map.empty,
@@ -71,11 +74,11 @@ class QueryState(val query: QueryContext,
   def getStatistics: QueryStatistics = query.getOptStatistics.getOrElse(QueryState.defaultStatistics)
 
   def withDecorator(decorator: PipeDecorator) =
-    new QueryState(query, resources, params, decorator, timeReader, initialContext, triadicState,
+    new QueryState(query, resources, params, decorator, tracers, timeReader, initialContext, triadicState,
                    repeatableReads, cachedIn)
 
   def withInitialContext(initialContext: ExecutionContext) =
-    new QueryState(query, resources, params, decorator, timeReader, Some(initialContext), triadicState,
+    new QueryState(query, resources, params, decorator, tracers, timeReader, Some(initialContext), triadicState,
                    repeatableReads, cachedIn)
 
   /**
@@ -89,7 +92,7 @@ class QueryState(val query: QueryContext,
   def copyArgumentStateTo(ctx: ExecutionContext): Unit = initialContext.foreach(initData => initData.copyTo(ctx))
 
   def withQueryContext(query: QueryContext) =
-    new QueryState(query, resources, params, decorator, timeReader, initialContext, triadicState,
+    new QueryState(query, resources, params, decorator, tracers, timeReader, initialContext, triadicState,
                    repeatableReads, cachedIn)
 
   def setExecutionContextFactory(exFactory: ExecutionContextFactory) = {
@@ -107,6 +110,18 @@ object QueryState {
 class TimeReader {
 
   lazy val getTime: Long = System.currentTimeMillis()
+}
+
+class Tracers extends Attribute[KernelTracer] {
+
+  /**
+    * Override attribute get() with NOOP tracer. This should go away once we know where to
+    * create tracers for specific operators.
+    */
+  override def get(id: Id): KernelTracer = {
+    if (isDefinedAt(id)) super.get(id)
+    else KernelTracer.NOOP
+  }
 }
 
 trait ExecutionContextFactory {

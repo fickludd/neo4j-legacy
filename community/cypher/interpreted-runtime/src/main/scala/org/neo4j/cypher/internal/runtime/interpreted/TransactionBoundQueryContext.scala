@@ -45,6 +45,7 @@ import org.neo4j.internal.kernel.api.exceptions.ProcedureException
 import org.neo4j.internal.kernel.api.helpers.RelationshipSelections.{allCursor, incomingCursor, outgoingCursor}
 import org.neo4j.internal.kernel.api.helpers._
 import org.neo4j.internal.kernel.api.procs.{UserAggregator, QualifiedName => KernelQualifiedName}
+import org.neo4j.internal.kernel.api.tracers.KernelTracer
 import org.neo4j.kernel.GraphDatabaseQueryService
 import org.neo4j.kernel.api._
 import org.neo4j.kernel.api.exceptions.schema.{AlreadyConstrainedException, AlreadyIndexedException}
@@ -448,12 +449,12 @@ sealed class TransactionBoundQueryContext(val transactionalContext: Transactiona
       case e: NotFoundException => throw new EntityNotFoundException(s"Node with id $id", e)
     }
 
-    override def all: Iterator[NodeValue] = {
+    override def all(tracer: KernelTracer): Iterator[NodeValue] = {
       val nodeCursor = allocateAndTraceNodeCursor()
       reads().allNodesScan(nodeCursor)
       new CursorIterator[NodeValue] {
         override protected def fetchNext(): NodeValue = {
-          if (nodeCursor.next()) fromNodeProxy(entityAccessor.newNodeProxy(nodeCursor.nodeReference()))
+          if (nodeCursor.next(tracer)) fromNodeProxy(entityAccessor.newNodeProxy(nodeCursor.nodeReference()))
           else null
         }
 
@@ -572,7 +573,7 @@ sealed class TransactionBoundQueryContext(val transactionalContext: Transactiona
         None
     }
 
-    override def all: Iterator[RelationshipValue] = {
+    override def all(tracer: KernelTracer): Iterator[RelationshipValue] = {
       val relCursor = allocateAndTraceRelationshipScanCursor()
       reads().allRelationshipsScan(relCursor)
       new CursorIterator[RelationshipValue] {

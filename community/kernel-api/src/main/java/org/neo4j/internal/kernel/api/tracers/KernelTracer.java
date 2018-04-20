@@ -17,34 +17,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.internal.kernel.api;
-
-import org.neo4j.internal.kernel.api.tracers.KernelTracer;
+package org.neo4j.internal.kernel.api.tracers;
 
 /**
- * Cursor for scanning nodes.
+ * Tracer for record lookups in kernel.
  */
-public interface NodeCursor extends Cursor
+public interface KernelTracer
 {
-    boolean next( KernelTracer tracer );
+    KernelTracer NOOP = reference -> {};
 
-    long nodeReference();
-
-    LabelSet labels();
-
-    boolean hasProperties();
-
-    void relationships( RelationshipGroupCursor cursor );
-
-    void allRelationships( RelationshipTraversalCursor relationships );
-
-    void properties( PropertyCursor cursor );
-
-    long relationshipGroupReference();
-
-    long allRelationshipsReference();
-
-    long propertiesReference();
-
-    boolean isDense();
+    /**
+     * Called before NodeCursor.next() returns true.
+     *
+     * @param reference The new cursor reference.
+     */
+    void trace( long reference );
 }

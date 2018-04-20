@@ -28,6 +28,7 @@ import org.neo4j.cypher.internal.v3_4.expressions.SemanticDirection
 import org.neo4j.cypher.internal.v3_4.logical.plans.QualifiedName
 import org.neo4j.graphdb.{Node, Path, PropertyContainer}
 import org.neo4j.internal.kernel.api.helpers.RelationshipSelectionCursor
+import org.neo4j.internal.kernel.api.tracers.KernelTracer
 import org.neo4j.internal.kernel.api.{CursorFactory, IndexReference, Read, Write, _}
 import org.neo4j.kernel.api.dbms.DbmsOperations
 import org.neo4j.kernel.impl.api.store.RelationshipIterator
@@ -278,7 +279,7 @@ class DelegatingOperations[T](protected val inner: Operations[T]) extends Operat
 
   override def removeProperty(obj: Long, propertyKeyId: Int): Unit = singleDbHit(inner.removeProperty(obj, propertyKeyId))
 
-  override def all: Iterator[T] = manyDbHits(inner.all)
+  override def all(tracer: KernelTracer): Iterator[T] = manyDbHits(inner.all(tracer))
 
   override def allPrimitive: PrimitiveLongIterator = manyDbHits(inner.allPrimitive)
 

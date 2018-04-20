@@ -28,6 +28,7 @@ import org.neo4j.internal.kernel.api.NodeCursor;
 import org.neo4j.internal.kernel.api.PropertyCursor;
 import org.neo4j.internal.kernel.api.RelationshipGroupCursor;
 import org.neo4j.internal.kernel.api.RelationshipTraversalCursor;
+import org.neo4j.internal.kernel.api.tracers.KernelTracer;
 import org.neo4j.io.pagecache.PageCursor;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.kernel.impl.store.NodeLabelsField;
@@ -173,6 +174,12 @@ class DefaultNodeCursor extends NodeRecord implements NodeCursor
     @Override
     public boolean next()
     {
+        return next( KernelTracer.NOOP );
+    }
+
+    @Override
+    public boolean next( KernelTracer tracer )
+    {
         if ( next == NO_ID )
         {
             reset();
@@ -205,8 +212,7 @@ class DefaultNodeCursor extends NodeRecord implements NodeCursor
                 if ( isSingle() )
                 {
                     //we are a "single cursor"
-                    next = NO_ID;
-                    return inUse();
+                    return lastElement( tracer );
                 }
                 else
                 {
@@ -215,20 +221,29 @@ class DefaultNodeCursor extends NodeRecord implements NodeCursor
                     highMark = read.nodeHighMark();
                     if ( next > highMark )
                     {
-                        next = NO_ID;
-                        return inUse();
+                        return lastElement( tracer );
                     }
                 }
             }
             else if ( next < 0 )
             {
                 //no more longs out there...
-                next = NO_ID;
-                return inUse();
+                return lastElement( tracer );
             }
         }
         while ( !inUse() );
+        tracer.trace( getId() );
         return true;
+    }
+
+    private boolean lastElement( KernelTracer tracer )
+    {
+        next = NO_ID;
+        if ( inUse() )
+        {
+            tracer.trace( getId() );
+        }
+        return inUse();
     }
 
     private boolean containsNode( TransactionState txs )

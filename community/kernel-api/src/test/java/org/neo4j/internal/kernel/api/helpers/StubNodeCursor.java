@@ -29,6 +29,7 @@ import org.neo4j.internal.kernel.api.NodeCursor;
 import org.neo4j.internal.kernel.api.PropertyCursor;
 import org.neo4j.internal.kernel.api.RelationshipGroupCursor;
 import org.neo4j.internal.kernel.api.RelationshipTraversalCursor;
+import org.neo4j.internal.kernel.api.tracers.KernelTracer;
 import org.neo4j.values.storable.Value;
 
 public class StubNodeCursor implements NodeCursor
@@ -148,6 +149,12 @@ public class StubNodeCursor implements NodeCursor
     public boolean isDense()
     {
         return dense;
+    }
+
+    @Override
+    public boolean next( KernelTracer tracer )
+    {
+        return next();
     }
 
     @Override

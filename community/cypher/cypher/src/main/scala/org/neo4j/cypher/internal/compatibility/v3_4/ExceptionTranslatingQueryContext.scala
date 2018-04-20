@@ -30,6 +30,7 @@ import org.neo4j.cypher.internal.v3_4.logical.plans.QualifiedName
 import org.neo4j.graphdb.{Node, Path, PropertyContainer}
 import org.neo4j.internal.kernel.api.{IndexQuery, IndexReference}
 import org.neo4j.internal.kernel.api.helpers.RelationshipSelectionCursor
+import org.neo4j.internal.kernel.api.tracers.KernelTracer
 import org.neo4j.kernel.impl.api.store.RelationshipIterator
 import org.neo4j.kernel.impl.core.EmbeddedProxySPI
 import org.neo4j.values.AnyValue
@@ -298,8 +299,8 @@ class ExceptionTranslatingQueryContext(val inner: QueryContext) extends QueryCon
     override def removeProperty(id: Long, propertyKeyId: Int) =
       translateException(inner.removeProperty(id, propertyKeyId))
 
-    override def all: Iterator[T] =
-      translateException(inner.all)
+    override def all(tracer: KernelTracer): Iterator[T] =
+      translateException(inner.all(tracer))
 
     override def allPrimitive: PrimitiveLongIterator =
       translateException(inner.allPrimitive)

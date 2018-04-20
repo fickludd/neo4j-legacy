@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.v3_4.expressions.SemanticDirection
 import org.neo4j.cypher.internal.v3_4.logical.plans.QualifiedName
 import org.neo4j.graphdb.{Node, Path, PropertyContainer}
 import org.neo4j.internal.kernel.api.helpers.RelationshipSelectionCursor
+import org.neo4j.internal.kernel.api.tracers.KernelTracer
 import org.neo4j.internal.kernel.api.{CursorFactory, IndexReference, Read, Write, _}
 import org.neo4j.kernel.api.dbms.DbmsOperations
 import org.neo4j.kernel.impl.api.store.RelationshipIterator
@@ -226,7 +227,7 @@ trait Operations[T] {
 
   def isDeletedInThisTx(id: Long): Boolean
 
-  def all: Iterator[T]
+  def all(tracer: KernelTracer): Iterator[T]
 
   def allPrimitive: PrimitiveLongIterator
 
