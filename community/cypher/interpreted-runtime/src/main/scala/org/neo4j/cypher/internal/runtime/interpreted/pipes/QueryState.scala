@@ -22,11 +22,9 @@ package org.neo4j.cypher.internal.runtime.interpreted.pipes
 import org.neo4j.collection.primitive.PrimitiveLongSet
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.PathValueBuilder
 import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.{InCheckContainer, SingleThreadedLRUCache}
-import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, MapExecutionContext, MutableMaps}
+import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, MapExecutionContext, MutableMaps, Tracers}
 import org.neo4j.cypher.internal.runtime.{QueryContext, QueryStatistics}
 import org.neo4j.cypher.internal.util.v3_4.ParameterNotFoundException
-import org.neo4j.cypher.internal.util.v3_4.attribution.{Attribute, Id}
-import org.neo4j.internal.kernel.api.tracers.KernelTracer
 import org.neo4j.values.AnyValue
 import org.neo4j.values.virtual.MapValue
 
@@ -110,18 +108,6 @@ object QueryState {
 class TimeReader {
 
   lazy val getTime: Long = System.currentTimeMillis()
-}
-
-class Tracers extends Attribute[KernelTracer] {
-
-  /**
-    * Override attribute get() with NOOP tracer. This should go away once we know where to
-    * create tracers for specific operators.
-    */
-  override def get(id: Id): KernelTracer = {
-    if (isDefinedAt(id)) super.get(id)
-    else KernelTracer.NOOP
-  }
 }
 
 trait ExecutionContextFactory {

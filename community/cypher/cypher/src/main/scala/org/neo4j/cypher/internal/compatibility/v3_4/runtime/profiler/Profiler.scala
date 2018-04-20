@@ -22,7 +22,7 @@ package org.neo4j.cypher.internal.compatibility.v3_4.runtime.profiler
 import org.neo4j.collection.primitive.PrimitiveLongIterator
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.helpers.PrimitiveLongHelper
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.{Pipe, PipeDecorator, QueryState}
-import org.neo4j.cypher.internal.runtime.interpreted.{DelegatingOperations, DelegatingQueryContext, ExecutionContext}
+import org.neo4j.cypher.internal.runtime.interpreted._
 import org.neo4j.cypher.internal.runtime.planDescription.InternalPlanDescription
 import org.neo4j.cypher.internal.runtime.planDescription.InternalPlanDescription.Arguments
 import org.neo4j.cypher.internal.runtime.{Operations, QueryContext}
@@ -45,11 +45,15 @@ class Profiler(databaseInfo: DatabaseInfo = DatabaseInfo.COMMUNITY) extends Pipe
   private var parentPipe: Option[Pipe] = None
 
 
-  def decorate(pipe: Pipe, iter: Iterator[ExecutionContext]): Iterator[ExecutionContext] = {
+  override def decorate(pipe: Pipe,
+                        iter: Iterator[ExecutionContext]): Iterator[ExecutionContext] = {
     val oldCount = rowStats.get(pipe.id).map(_.count).getOrElse(0L)
-    val resultIter = new ProfilingIterator(iter, oldCount, pipe.id, if (trackPageCacheStats) updatePageCacheStatistics
-    else {
-      (_) => Unit})
+    val resultIter =
+      new ProfilingIterator(iter,
+                            oldCount,
+                            pipe.id,
+                            if (trackPageCacheStats) updatePageCacheStatistics
+                            else (_) => Unit )
 
     rowStats(pipe.id) = resultIter
     resultIter
@@ -68,7 +72,7 @@ class Profiler(databaseInfo: DatabaseInfo = DatabaseInfo.COMMUNITY) extends Pipe
     state.withQueryContext(decoratedContext)
   }
 
-  private def updatePageCacheStatistics(pipeId: Id) = {
+  private def updatePageCacheStatistics(pipeId: Id): Unit = {
     val context = dbHitsStats(pipeId)
     val statisticProvider = context.transactionalContext.kernelStatisticProvider
     val currentStat = pageCacheStats(pipeId)
@@ -79,13 +83,17 @@ class Profiler(databaseInfo: DatabaseInfo = DatabaseInfo.COMMUNITY) extends Pipe
     databaseInfo.edition != Edition.community
   }
 
-  def decorate(plan: () => InternalPlanDescription, verifyProfileReady: () => Unit): () => InternalPlanDescription = {
+  def decorate(plan: () => InternalPlanDescription,
+               tracers: Tracers,
+               verifyProfileReady: () => Unit): () => InternalPlanDescription = {
     () => {
       verifyProfileReady()
       plan() map {
         input: InternalPlanDescription =>
           val rows = rowStats.get(input.id).map(_.count).getOrElse(0L)
-          val dbHits = dbHitsStats.get(input.id).map(_.count).getOrElse(0L)
+          val dbHits =
+            if (tracers.isDefinedAt(input.id)) tracers(input.id).count
+            else dbHitsStats.get(input.id).map(_.count).getOrElse(0L)
           val (hits: Long, misses: Long) = pageCacheStats.getOrElse(input.id, (0L, 0L))
           val hitRatio = MathUtil.portion(hits, misses)
 
@@ -109,8 +117,10 @@ class Profiler(databaseInfo: DatabaseInfo = DatabaseInfo.COMMUNITY) extends Pipe
 
     def decorate(pipe: Pipe, iter: Iterator[ExecutionContext]): Iterator[ExecutionContext] = iter
 
-    def decorate(plan: () => InternalPlanDescription, verifyProfileReady: () => Unit): () => InternalPlanDescription =
-      outerProfiler.decorate(plan, verifyProfileReady)
+    def decorate(plan: () => InternalPlanDescription,
+                 tracers: Tracers,
+                 verifyProfileReady: () => Unit): () => InternalPlanDescription =
+      outerProfiler.decorate(plan, tracers, verifyProfileReady)
   }
 
   def registerParentPipe(pipe: Pipe): Unit =

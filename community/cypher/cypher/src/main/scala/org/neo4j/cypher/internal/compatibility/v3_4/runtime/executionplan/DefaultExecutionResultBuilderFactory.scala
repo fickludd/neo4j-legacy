@@ -24,7 +24,7 @@ import org.neo4j.cypher.internal.compatibility.v3_4.runtime.helpers.InternalWrap
 import org.neo4j.cypher.internal.frontend.v3_4.phases.InternalNotificationLogger
 import org.neo4j.cypher.internal.planner.v3_4.spi.PlanningAttributes.{Cardinalities, ReadOnlies}
 import org.neo4j.cypher.internal.runtime.interpreted.pipes._
-import org.neo4j.cypher.internal.runtime.interpreted.{CSVResources, ExecutionContext}
+import org.neo4j.cypher.internal.runtime.interpreted.{CSVResources, ExecutionContext, Tracers}
 import org.neo4j.cypher.internal.runtime.planDescription.InternalPlanDescription.Arguments.{Runtime, RuntimeImpl}
 import org.neo4j.cypher.internal.runtime.planDescription.{InternalPlanDescription, LogicalPlan2PlanDescription}
 import org.neo4j.cypher.internal.runtime.{InternalExecutionResult, _}
@@ -44,7 +44,7 @@ abstract class BaseExecutionResultBuilderFactory(pipeInfo: PipeInfo,
     protected var pipeDecorator: PipeDecorator = NullPipeDecorator
     protected var exceptionDecorator: CypherException => CypherException = identity
 
-    protected def createQueryState(params: MapValue): QueryState
+    protected def createQueryState(params: MapValue, tracers: Tracers): QueryState
 
     def setQueryContext(context: QueryContext) {
       maybeQueryContext = Some(context)
@@ -72,7 +72,11 @@ abstract class BaseExecutionResultBuilderFactory(pipeInfo: PipeInfo,
                        cardinalities: Cardinalities): InternalExecutionResult = {
       taskCloser.addTask(queryContext.transactionalContext.close)
       taskCloser.addTask(queryContext.resources.close)
-      val state = createQueryState(params)
+      val tracers = new Tracers
+      logicalPlan.foreach {
+                            case plan: LogicalPlan => tracers.create(plan)
+                          }
+      val state = createQueryState(params, tracers)
       try {
         createResults(state, planType, notificationLogger, runtimeName, readOnlies, cardinalities)
       }
@@ -111,7 +115,7 @@ abstract class BaseExecutionResultBuilderFactory(pipeInfo: PipeInfo,
             throw new ProfilerStatisticsNotReadyException()
           }
         }
-        val descriptor = buildDescriptor(planDescription, verifyProfileReady)
+        val descriptor = buildDescriptor(planDescription, state.tracers, verifyProfileReady)
         new PipeExecutionResult(resultIterator, columns.toArray, state, descriptor, planType, queryType)
       }
     }
@@ -120,8 +124,10 @@ abstract class BaseExecutionResultBuilderFactory(pipeInfo: PipeInfo,
 
     protected def buildResultIterator(results: Iterator[ExecutionContext], isUpdating: Boolean): ResultIterator
 
-    private def buildDescriptor(planDescription: () => InternalPlanDescription, verifyProfileReady: () => Unit): () => InternalPlanDescription =
-      pipeDecorator.decorate(planDescription, verifyProfileReady)
+    private def buildDescriptor(planDescription: () => InternalPlanDescription,
+                                tracers: Tracers,
+                                verifyProfileReady: () => Unit): () => InternalPlanDescription =
+      pipeDecorator.decorate(planDescription, tracers, verifyProfileReady)
   }
 
   private def getQueryType = {
@@ -148,8 +154,8 @@ case class InterpretedExecutionResultBuilderFactory(pipeInfo: PipeInfo,
     new InterpretedExecutionWorkflowBuilder()
 
   case class InterpretedExecutionWorkflowBuilder() extends BaseExecutionWorkflowBuilder {
-    override def createQueryState(params: MapValue) = {
-      new QueryState(queryContext, externalResource, params, pipeDecorator,
+    protected override def createQueryState(params: MapValue, tracers: Tracers): QueryState = {
+      new QueryState(queryContext, externalResource, params, pipeDecorator, tracers,
         triadicState = mutable.Map.empty, repeatableReads = mutable.Map.empty)
     }
 

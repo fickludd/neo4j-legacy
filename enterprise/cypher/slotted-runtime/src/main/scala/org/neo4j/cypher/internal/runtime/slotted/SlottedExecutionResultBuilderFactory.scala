@@ -22,7 +22,8 @@ package org.neo4j.cypher.internal.runtime.slotted
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.PhysicalPlanningAttributes.SlotConfigurations
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.{ClosingQueryResultRecordIterator, ResultIterator}
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.executionplan.{BaseExecutionResultBuilderFactory, ExecutionResultBuilder, PipeInfo}
-import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
+import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, Tracers}
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.cypher.internal.v3_4.logical.plans.LogicalPlan
 import org.neo4j.values.virtual.MapValue
 
@@ -38,8 +39,8 @@ class SlottedExecutionResultBuilderFactory(pipeInfo: PipeInfo,
     new SlottedExecutionWorkflowBuilder()
 
   class SlottedExecutionWorkflowBuilder() extends BaseExecutionWorkflowBuilder {
-    override protected def createQueryState(params: MapValue) = {
-      new SlottedQueryState(queryContext, externalResource, params, pipeDecorator,
+    override protected def createQueryState(params: MapValue, tracers: Tracers): QueryState = {
+      new SlottedQueryState(queryContext, externalResource, params, pipeDecorator, tracers,
         triadicState = mutable.Map.empty, repeatableReads = mutable.Map.empty)
     }
 

@@ -98,6 +98,18 @@ object Foldable {
         reverse = true
       )
 
+    /**
+      * Apply function f on every element in this FoldableAny.
+      *
+      * @param f function to apply
+      */
+    def foreach(f: PartialFunction[Any, Unit]): Unit =
+      fold({}) {
+                 case element: Any =>
+                   f.lift(element)
+                   x => x
+               }
+
     /*
     Allows searching through object tree and object collections
      */

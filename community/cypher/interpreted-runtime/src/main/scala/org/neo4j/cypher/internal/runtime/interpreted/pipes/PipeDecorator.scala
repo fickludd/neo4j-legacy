@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
-import org.neo4j.cypher.internal.runtime.interpreted.ExecutionContext
+import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, Tracers}
 import org.neo4j.cypher.internal.runtime.planDescription.InternalPlanDescription
 
 /*
@@ -30,7 +30,9 @@ trait PipeDecorator {
 
   def decorate(pipe: Pipe, iter: Iterator[ExecutionContext]): Iterator[ExecutionContext]
 
-  def decorate(plan: () => InternalPlanDescription, verifyProfileReady: () => Unit): () => InternalPlanDescription
+  def decorate(plan: () => InternalPlanDescription,
+               tracers: Tracers,
+               verifyProfileReady: () => Unit): () => InternalPlanDescription
 
   /*
    * Returns the inner decorator of this decorator. The inner decorator is used for nested expressions
@@ -42,7 +44,9 @@ trait PipeDecorator {
 object NullPipeDecorator extends PipeDecorator {
   def decorate(pipe: Pipe, iter: Iterator[ExecutionContext]): Iterator[ExecutionContext] = iter
 
-  def decorate(plan: () => InternalPlanDescription, verifyProfileReady: () => Unit): () => InternalPlanDescription = plan
+  def decorate(plan: () => InternalPlanDescription,
+               tracers: Tracers,
+               verifyProfileReady: () => Unit): () => InternalPlanDescription = plan
 
   def decorate(pipe: Pipe, state: QueryState): QueryState = state
 

@@ -24,7 +24,7 @@ import org.mockito.Mockito.when
 import org.neo4j.cypher.internal.planner.v3_4.spi.{EmptyKernelStatisticProvider, KernelStatisticProvider}
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.{NestedPipeExpression, ProjectedPath}
 import org.neo4j.cypher.internal.runtime.interpreted.pipes._
-import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, QueryStateHelper}
+import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, QueryStateHelper, Tracers}
 import org.neo4j.cypher.internal.runtime.planDescription.InternalPlanDescription.Arguments._
 import org.neo4j.cypher.internal.runtime.planDescription.{PlanDescriptionImpl, _}
 import org.neo4j.cypher.internal.runtime.{QueryContext, QueryTransactionalContext}
@@ -43,12 +43,15 @@ class ProfilerTest extends CypherFunSuite {
     val pipe = ProfilerTestPipe(start, "foo", rows = 10, dbAccess = 20)(idGen.id())
     val queryContext: QueryContext = prepareQueryContext()
     val profiler = new Profiler(DatabaseInfo.ENTERPRISE)
-    val queryState = QueryStateHelper.emptyWith(query = queryContext, decorator = profiler)
+    val tracers = new Tracers
+    val queryState = QueryStateHelper.emptyWith(query = queryContext,
+                                                tracers = tracers,
+                                                decorator = profiler)
     val planDescription = createPlanDescription("single row" -> start, "foo" -> pipe)
 
     //WHEN
     materialize(pipe.createResults(queryState))
-    val decoratedResult = profiler.decorate(() => planDescription, verifyProfileReady = () => {})
+    val decoratedResult = profiler.decorate(() => planDescription, tracers, verifyProfileReady = () => {})
 
     //THEN
     assertRecorded(decoratedResult(), "foo", expectedRows = 10, expectedDbHits = 20)
@@ -61,12 +64,13 @@ class ProfilerTest extends CypherFunSuite {
     val pipe = ProfilerTestPipe(start, "foo", rows = 10, dbAccess = 20, statisticProvider, hits = 2, misses = 7)(idGen.id())
     val queryContext: QueryContext = prepareQueryContext(statisticProvider)
     val profiler = new Profiler(DatabaseInfo.ENTERPRISE)
+    val tracers = new Tracers
     val queryState = QueryStateHelper.emptyWith(query = queryContext, decorator = profiler)
     val planDescription = createPlanDescription("single row" -> start, "foo" -> pipe)
 
     //WHEN
     materialize(pipe.createResults(queryState))
-    val decoratedResult = profiler.decorate(() => planDescription, verifyProfileReady = () => {})
+    val decoratedResult = profiler.decorate(() => planDescription, tracers, verifyProfileReady = () => {})
 
     //THEN
     assertRecorded(decoratedResult(), "foo", expectedRows = 10, expectedDbHits = 20,
@@ -88,12 +92,13 @@ class ProfilerTest extends CypherFunSuite {
     val pipe3 = ProfilerTestPipe(pipe2, "baz", rows = 1, dbAccess = 2)(idGen.id())
     val queryContext: QueryContext = prepareQueryContext()
     val profiler = new Profiler
+    val tracers = new Tracers
     val queryState = QueryStateHelper.emptyWith(query = queryContext, decorator = profiler)
     val planDescription = createPlanDescription("single row" -> start, "foo" -> pipe1, "bar" -> pipe2, "baz" -> pipe3)
 
     //WHEN
     materialize(pipe3.createResults(queryState))
-    val decoratedResult = profiler.decorate(() => planDescription, verifyProfileReady = () => {})
+    val decoratedResult = profiler.decorate(() => planDescription, tracers, verifyProfileReady = () => {})
 
     //THEN
     assertRecorded(decoratedResult(), "foo", expectedRows = 10, expectedDbHits = 25)
@@ -110,12 +115,13 @@ class ProfilerTest extends CypherFunSuite {
     val pipe3 = ProfilerTestPipe(pipe2, "baz", rows = 1, dbAccess = 2, statisticProvider, 37, 68)(idGen.id())
     val queryContext: QueryContext = prepareQueryContext(statisticProvider)
     val profiler = new Profiler(DatabaseInfo.ENTERPRISE)
+    val tracers = new Tracers
     val queryState = QueryStateHelper.emptyWith(query = queryContext, decorator = profiler)
     val planDescription = createPlanDescription("single row" -> start, "foo" -> pipe1, "bar" -> pipe2, "baz" -> pipe3)
 
     //WHEN
     materialize(pipe3.createResults(queryState))
-    val decoratedResult = profiler.decorate(() => planDescription, verifyProfileReady = () => {})
+    val decoratedResult = profiler.decorate(() => planDescription, tracers, verifyProfileReady = () => {})
 
     //THEN
     assertRecorded(decoratedResult(), "foo", expectedRows = 10, expectedDbHits = 25, expectedPageCacheHits = 2, expectedPageCacheMisses = 7)
@@ -132,6 +138,7 @@ class ProfilerTest extends CypherFunSuite {
     val apply = ApplyPipe(lhs, rhs)(idGen.id())
     val queryContext: QueryContext = prepareQueryContext()
     val profiler = new Profiler
+    val tracers = new Tracers
     val queryState = QueryStateHelper.emptyWith(query = queryContext, decorator = profiler)
     val planDescription = createPlanDescription(
       "start1" -> s1,
@@ -142,7 +149,7 @@ class ProfilerTest extends CypherFunSuite {
 
     // WHEN we create the results,
     materialize(apply.createResults(queryState))
-    val decoratedResult = profiler.decorate(() => planDescription, verifyProfileReady = () => {})
+    val decoratedResult = profiler.decorate(() => planDescription, tracers, verifyProfileReady = () => {})
 
     // THEN
     assertRecorded(decoratedResult(), "rhs", expectedRows = 10 * 20, expectedDbHits = 10 * 30)
@@ -161,6 +168,7 @@ class ProfilerTest extends CypherFunSuite {
 
     val queryContext: QueryContext = prepareQueryContext()
     val profiler = new Profiler
+    val tracers = new Tracers
     val queryState = QueryStateHelper.emptyWith(query = queryContext, decorator = profiler)
     val planDescription = createPlanDescription(
       "start1" -> start1,
@@ -170,7 +178,7 @@ class ProfilerTest extends CypherFunSuite {
 
     // WHEN we create the results,
     materialize(pipeUnderInspection.createResults(queryState))
-    val decoratedResult = profiler.decorate(() => planDescription, verifyProfileReady = () => {})
+    val decoratedResult = profiler.decorate(() => planDescription, tracers, verifyProfileReady = () => {})
 
     // THEN the ProjectionNewPipe has correctly recorded the dbhits
     assertRecorded(decoratedResult(), "Projection", expectedRows = 1, expectedDbHits = DB_HITS)
@@ -189,6 +197,7 @@ class ProfilerTest extends CypherFunSuite {
 
     val queryContext: QueryContext = prepareQueryContext(statisticProvider)
     val profiler = new Profiler(DatabaseInfo.HA)
+    val tracers = new Tracers
     val queryState = QueryStateHelper.emptyWith(query = queryContext, decorator = profiler)
     val planDescription = createPlanDescription(
       "start1" -> start1,
@@ -198,7 +207,7 @@ class ProfilerTest extends CypherFunSuite {
 
     // WHEN we create the results,
     materialize(pipeUnderInspection.createResults(queryState))
-    val decoratedResult = profiler.decorate(() => planDescription, verifyProfileReady = () => {})
+    val decoratedResult = profiler.decorate(() => planDescription, tracers, verifyProfileReady = () => {})
 
     // THEN the ProjectionNewPipe has correctly recorded the page cache hits
     assertRecorded(decoratedResult(), "Projection", expectedRows = 1, expectedDbHits = 2, expectedPageCacheHits = 3, expectedPageCacheMisses = 4)
@@ -213,6 +222,7 @@ class ProfilerTest extends CypherFunSuite {
     val start2 = ArgumentPipe()(idGen.id())
     val start3 = ArgumentPipe()(idGen.id())
     val profiler1 = ProfilerTestPipe(start1, "nested pipe1", rows = 10, dbAccess = DB_HITS)(idGen.id())
+    val tracers = new Tracers
     val nestedExpression = NestedPipeExpression(profiler1, projectedPath)
     val innerInnerPipe = ProjectionPipe(start2, Map("y" -> nestedExpression))(idGen.id())
     val profiler2 = ProfilerTestPipe(innerInnerPipe, "nested pipe2", rows = 10, dbAccess = DB_HITS)(idGen.id())
@@ -234,7 +244,7 @@ class ProfilerTest extends CypherFunSuite {
       "innerInner" -> innerInnerPipe,
       "Projection" -> pipeUnderInspection
     )
-    val decoratedResult = profiler.decorate(() => description, verifyProfileReady = () => {})
+    val decoratedResult = profiler.decorate(() => description, tracers, verifyProfileReady = () => {})
 
     // THEN the ProjectionNewPipe has correctly recorded the dbhits
     assertRecorded(decoratedResult(), "Projection", expectedRows = 1, expectedDbHits = DB_HITS * 2)
@@ -267,10 +277,11 @@ class ProfilerTest extends CypherFunSuite {
 
   test("should not count dbhits multiple times when the same pipe is used multiple times") {
       val profiler = new Profiler
+      val tracers = new Tracers
 
       val pipe1 = ArgumentPipe()(idGen.id())
       val ctx1: QueryContext = prepareQueryContext()
-      val state1 = QueryStateHelper.emptyWith(query = ctx1, resources = mock[ExternalCSVResource])
+      val state1 = QueryStateHelper.emptyWith(query = ctx1, tracers = tracers, resources = mock[ExternalCSVResource])
 
       val profiled1 = profiler.decorate(pipe1, state1)
       profiled1.query.createNode()
@@ -278,7 +289,7 @@ class ProfilerTest extends CypherFunSuite {
 
       val pipe2 = ArgumentPipe()(idGen.id())
       val ctx2: QueryContext = prepareQueryContext()
-      val state2 = QueryStateHelper.emptyWith(query = ctx2, resources = mock[ExternalCSVResource])
+      val state2 = QueryStateHelper.emptyWith(query = ctx2, tracers = tracers, resources = mock[ExternalCSVResource])
 
 
       val profiled2 = profiler.decorate(pipe2, state2)
