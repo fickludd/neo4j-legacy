@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.util.v3_4.symbols.CypherType
 import org.neo4j.cypher.internal.v3_4.expressions.Expression
 import org.neo4j.cypher.internal.v3_4.logical.plans.LogicalPlan
 import org.neo4j.internal.kernel.api.Transaction
-import org.neo4j.values.AnyValue
+import org.neo4j.kernel.impl.query.{QueryExecution, ResultBufferManager}
 import org.neo4j.values.virtual.MapValue
 
 // =============================================== /
@@ -74,30 +74,6 @@ trait ExecutableQuery[State <: QueryExecutionState] {
 }
 
 /**
-  * Representation of the execution of a query.
-  */
-trait QueryExecution {
-
-  /**
-    * The names of the result columns
-    *
-    * @return Array containing the names of the result columns in order.
-    */
-  def header(): Array[String]
-
-  /**
-    * Returns the result buffer of this execution.
-    * @return the result buffer of this execution.
-    */
-  def resultBuffer(): ResultBuffer
-
-  /**
-    * Abort this execution, throwing away any buffered results, and releasing any other resources.
-    */
-  def abort(): Unit
-}
-
-/**
   * A QueryExecutionState holds the mutable state needed during execution of a query.
   *
   * QueryExecutionStates of the correct type are allocated and released by the relevant runtime.
@@ -109,7 +85,7 @@ trait QueryExecutionState
 // ______________________________________________________ /
 
 /**
-  * Really a semantic table.
+  * Context for physical compilation.
   */
 trait PhysicalCompilationContext {
   def typeFor(expression: Expression): CypherType
@@ -117,49 +93,5 @@ trait PhysicalCompilationContext {
   def readOnly: Boolean
   def tokenContext: TokenContext
   def periodicCommit: Option[Long]
-}
-
-/**
-  * Manages result buffers.
-  */
-trait ResultBufferManager {
-  def allocateResultBuffer(nValues: Int): ResultBuffer
-  def releaseResultBuffer(buffer: ResultBuffer)
-}
-
-/**
-  * Result buffer holding the results of a query execution.
-  */
-trait ResultBuffer {
-
-  /**
-    * Returns the number of values per result for this result buffer.
-    * @return the number of values per result for this result buffer.
-    */
-  def valuesPerResult: Int
-
-  /**
-    * Prepare the result stage for the next result row.
-    *
-    * @return the id of the new row, or -1 if the stage could not be cleared.
-    */
-  def prepareResultStage(): Long
-
-  /**
-    * Write a value of the result stage.
-    *
-    * This method is expected to be called for every valueId in the range [0..valuesPerResult), for every row.
-    *
-    * @param columnId column id of the value to write.
-    * @param value the Value to write.
-    */
-  def writeValueToStage(columnId: Int, value: AnyValue): Unit
-
-  /**
-    * Commit the result row in the result stage to the buffer.
-    *
-    * @return true if the buffer can accept the next result row.
-    */
-  def commitResultStage(): Boolean
 }
 

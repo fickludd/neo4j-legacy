@@ -25,5 +25,22 @@ class InterpretedQueryExecution(override val header: Array[String],
                                 override val resultBuffer: ResultBuffer,
                                 val resultIterator: Iterator[ExecutionContext]) extends QueryExecution {
 
+  override def waitForResult(): Boolean = {
+    if (resultIterator.hasNext) {
+      val row = resultIterator.next()
+      val resultRowId = resultBuffer.prepareResultStage()
+      if (resultRowId >= 0) {
+        var i = 0
+        while (i < header.length) {
+          val columnName = header(i)
+          resultBuffer.writeValueToStage(i, row(columnName))
+          i += 1
+        }
+        resultBuffer.commitResultStage()
+      }
+    }
+    false
+  }
+
   override def abort(): Unit = ???
 }
