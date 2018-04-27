@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.runtime.interpreted
 import org.neo4j.cypher.internal.runtime._
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.{ProduceResultsPipe, QueryState}
 import org.neo4j.internal.kernel.api.Transaction
+import org.neo4j.kernel.impl.query.{QueryExecution, ResultBuffer}
 import org.neo4j.values.virtual.MapValue
 
 case class InterpretedExecutableQuery(pipe: ProduceResultsPipe,
@@ -30,13 +31,12 @@ case class InterpretedExecutableQuery(pipe: ProduceResultsPipe,
 
   override def execute(params: MapValue,
                        state: QueryState,
-                       resultBufferManager: ResultBufferManager,
+                       resultBuffer: ResultBuffer,
                        transaction: Option[Transaction]
                       ): QueryExecution = {
 
     val resultIterator = pipe.createResults(state)
-    val resultBuffer = resultBufferManager.allocateResultBuffer(pipe.columns.size)
-
+    resultBuffer.setValuesPerResult(pipe.columns.size)
     new InterpretedQueryExecution(pipe.columns.toArray, resultBuffer, resultIterator)
   }
 }

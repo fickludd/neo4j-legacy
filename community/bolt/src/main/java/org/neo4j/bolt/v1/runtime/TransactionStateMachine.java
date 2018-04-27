@@ -28,18 +28,16 @@ import org.neo4j.bolt.v1.runtime.bookmarking.Bookmark;
 import org.neo4j.bolt.v1.runtime.spi.BoltResult;
 import org.neo4j.bolt.v1.runtime.spi.BookmarkResult;
 import org.neo4j.cypher.InvalidSemanticsException;
-import org.neo4j.function.ThrowingAction;
 import org.neo4j.function.ThrowingConsumer;
 import org.neo4j.graphdb.TransactionTerminatedException;
-import org.neo4j.internal.kernel.api.security.LoginContext;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
+import org.neo4j.internal.kernel.api.exceptions.TransactionFailureException;
+import org.neo4j.internal.kernel.api.security.LoginContext;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.exceptions.Status;
-import org.neo4j.internal.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.impl.query.QueryExecutionKernelException;
+import org.neo4j.kernel.impl.query.ResultBuffer;
 import org.neo4j.values.virtual.MapValue;
-
-import static org.neo4j.function.ThrowingAction.noop;
 
 public class TransactionStateMachine implements StatementProcessor
 {
@@ -71,14 +69,15 @@ public class TransactionStateMachine implements StatementProcessor
     }
 
     @Override
-    public StatementMetadata run( String statement, MapValue params ) throws KernelException
+    public StatementMetadata run( String statement, MapValue params,
+            BoltResultBuffer resultBuffer ) throws KernelException
     {
         before();
         try
         {
             ensureNoPendingTerminationNotice();
 
-            state = state.run( ctx, spi, statement, params );
+            state = state.run( ctx, spi, statement, params, resultBuffer );
 
             return ctx.currentStatementMetadata;
         }
@@ -196,7 +195,7 @@ public class TransactionStateMachine implements StatementProcessor
                 {
                     @Override
                     State run( MutableTransactionState ctx, SPI spi, String statement,
-                               MapValue params ) throws KernelException
+                            MapValue params, BoltResultBuffer resultBuffer ) throws KernelException
 
                     {
                         if ( BEGIN.matcher( statement ).matches() )
@@ -237,13 +236,14 @@ public class TransactionStateMachine implements StatementProcessor
                                 ctx.lastStatement = statement;
                             }
 
-                            execute( ctx, spi, statement, params, spi.isPeriodicCommit( statement ) );
+                            execute( ctx, spi, statement, params, spi.isPeriodicCommit( statement ), resultBuffer );
 
                             return AUTO_COMMIT;
                         }
                     }
 
-                    void execute( MutableTransactionState ctx, SPI spi, String statement, MapValue params, boolean isPeriodicCommit )
+                    void execute( MutableTransactionState ctx, SPI spi, String statement, MapValue params,
+                            boolean isPeriodicCommit, BoltResultBuffer resultBuffer )
                             throws KernelException
                     {
                         // only acquire a new transaction when the statement does not contain periodic commit
@@ -255,7 +255,7 @@ public class TransactionStateMachine implements StatementProcessor
                         boolean failed = true;
                         try
                         {
-                            BoltResultHandle resultHandle = spi.executeQuery( ctx.querySource, ctx.loginContext, statement, params );
+                            BoltResultHandle resultHandle = spi.executeQuery( ctx.querySource, ctx.loginContext, statement, params, resultBuffer );
                             startExecution( ctx, resultHandle );
                             failed = false;
                         }
@@ -298,7 +298,8 @@ public class TransactionStateMachine implements StatementProcessor
         EXPLICIT_TRANSACTION
                 {
                     @Override
-                    State run( MutableTransactionState ctx, SPI spi, String statement, MapValue params )
+                    State run( MutableTransactionState ctx, SPI spi, String statement, MapValue params,
+                            BoltResultBuffer resultBuffer )
                             throws KernelException
                     {
                         if ( BEGIN.matcher( statement ).matches() )
@@ -339,16 +340,16 @@ public class TransactionStateMachine implements StatementProcessor
                             }
                             else
                             {
-                                BoltResultHandle resultHandle = execute( ctx, spi, statement, params );
+                                BoltResultHandle resultHandle = execute( ctx, spi, statement, params, resultBuffer );
                                 startExecution( ctx, resultHandle );
                                 return EXPLICIT_TRANSACTION;
                             }
                         }
                     }
 
-                    private BoltResultHandle execute( MutableTransactionState ctx, SPI spi, String statement, MapValue params )
+                    private BoltResultHandle execute( MutableTransactionState ctx, SPI spi, String statement, MapValue params, ResultBuffer resultBuffer )
                     {
-                        return executeQuery( ctx, spi, statement, params );
+                        return executeQuery( ctx, spi, statement, params, resultBuffer );
                     }
 
                     @Override
@@ -361,9 +362,10 @@ public class TransactionStateMachine implements StatementProcessor
                 };
 
         abstract State run( MutableTransactionState ctx,
-                            SPI spi,
-                            String statement,
-                            MapValue params ) throws KernelException;
+                SPI spi,
+                String statement,
+                MapValue params,
+                BoltResultBuffer resultBuffer ) throws KernelException;
 
         abstract void streamResult( MutableTransactionState ctx,
                                     ThrowingConsumer<BoltResult, Exception> resultConsumer ) throws Exception;
@@ -456,9 +458,9 @@ public class TransactionStateMachine implements StatementProcessor
     }
 
     private static BoltResultHandle executeQuery( MutableTransactionState ctx, SPI spi, String statement,
-                                                  MapValue params )
+                                                  MapValue params, ResultBuffer resultBuffer )
     {
-        return spi.executeQuery( ctx.querySource, ctx.loginContext, statement, params );
+        return spi.executeQuery( ctx.querySource, ctx.loginContext, statement, params, resultBuffer );
     }
 
     /**
@@ -526,6 +528,7 @@ public class TransactionStateMachine implements StatementProcessor
         boolean isPeriodicCommit( String query );
 
         BoltResultHandle executeQuery( BoltQuerySource querySource,
-                LoginContext loginContext, String statement, MapValue params );
+                LoginContext loginContext, String statement, MapValue params,
+                ResultBuffer resultBuffer );
     }
 }

@@ -31,6 +31,7 @@ import org.neo4j.bolt.v1.messaging.BoltMessageRouter;
 import org.neo4j.bolt.v1.messaging.BoltRequestMessageHandler;
 import org.neo4j.bolt.v1.messaging.BoltResponseMessageWriter;
 import org.neo4j.bolt.v1.messaging.Neo4jPack;
+import org.neo4j.bolt.v1.runtime.BoltResultBuffer;
 import org.neo4j.kernel.impl.logging.LogService;
 
 /**
@@ -56,7 +57,10 @@ public class DefaultBoltProtocolPipelineInstaller implements BoltProtocolPipelin
         this.connection = connection;
         this.neo4jPack = neo4jPack;
         this.responseWriter = new BoltResponseMessageWriter( neo4jPack, connection.output(), logging, boltChannel.log() );
-        this.messageHandler = new BoltMessageRouter( logging.getInternalLog( getClass() ), boltChannel.log(), connection, responseWriter );
+
+        BoltResultBuffer resultBuffer = new BoltResultBuffer( neo4jPack, connection.output(), logging );
+
+        this.messageHandler = new BoltMessageRouter( logging.getInternalLog( getClass() ), boltChannel.log(), connection, responseWriter, resultBuffer );
         this.logging = logging;
     }
 

@@ -44,7 +44,7 @@ public abstract class BoltResult implements AutoCloseable
 
         /**
          * Associate arbitrary metadata with the result stream. This will get transferred at the end of the stream.
-         * Please stick to Neo4j type system types (Map, List, Integer, Float, Boolean, String etc) */
+         */
         void addMetadata( String key, AnyValue value );
     }
 

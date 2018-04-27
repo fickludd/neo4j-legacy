@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted
 
-import org.neo4j.cypher.internal.runtime._
+import org.neo4j.kernel.impl.query.{QueryExecution, ResultBuffer}
 
 class InterpretedQueryExecution(override val header: Array[String],
                                 override val resultBuffer: ResultBuffer,
@@ -42,5 +42,5 @@ class InterpretedQueryExecution(override val header: Array[String],
     false
   }
 
-  override def abort(): Unit = ???
+  override def terminate(): Unit = ???
 }

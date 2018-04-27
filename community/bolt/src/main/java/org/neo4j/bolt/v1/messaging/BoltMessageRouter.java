@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.neo4j.bolt.logging.BoltMessageLogger;
 import org.neo4j.bolt.runtime.BoltConnection;
+import org.neo4j.bolt.v1.runtime.BoltResultBuffer;
 import org.neo4j.bolt.v1.runtime.Neo4jError;
 import org.neo4j.bolt.v1.runtime.spi.BoltResult;
 import org.neo4j.cypher.result.QueryResult;
@@ -46,11 +47,14 @@ public class BoltMessageRouter implements BoltRequestMessageHandler
     private final MessageProcessingHandler resultHandler;
     private final MessageProcessingHandler defaultHandler;
 
+    private final BoltResultBuffer resultBuffer;
+
     private BoltResponseMessageHandler<IOException> output;
     private BoltConnection connection;
 
     public BoltMessageRouter( Log internalLog, BoltMessageLogger messageLogger,
-                              BoltConnection connection, BoltResponseMessageHandler<IOException> output )
+            BoltConnection connection, BoltResponseMessageHandler<IOException> output,
+            BoltResultBuffer resultBuffer )
     {
         this.messageLogger = messageLogger;
 
@@ -59,6 +63,7 @@ public class BoltMessageRouter implements BoltRequestMessageHandler
         this.resultHandler = new ResultHandler( output, connection, internalLog );
         this.defaultHandler = new MessageProcessingHandler( output, connection, internalLog );
 
+        this.resultBuffer = resultBuffer;
         this.connection = connection;
         this.output = output;
     }
@@ -90,7 +95,7 @@ public class BoltMessageRouter implements BoltRequestMessageHandler
     public void onRun( String statement, MapValue params )
     {
         messageLogger.logRun();
-        connection.enqueue( session -> session.run( statement, params, runHandler ) );
+        connection.enqueue( session -> session.run( statement, params, runHandler, resultBuffer ) );
     }
 
     @Override

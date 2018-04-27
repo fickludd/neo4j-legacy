@@ -41,9 +41,10 @@ import org.neo4j.cypher.internal.runtime.interpreted._
 import org.neo4j.cypher.internal.runtime.{ExplainMode, InternalExecutionResult, NormalMode, ProfileMode}
 import org.neo4j.cypher.internal.util.v3_4.InputPosition
 import org.neo4j.cypher.internal.v3_4.logical.plans.{ExplicitNodeIndexUsage, ExplicitRelationshipIndexUsage, SchemaIndexScanUsage, SchemaIndexSeekUsage}
+import org.neo4j.cypher.result.QueryResult
 import org.neo4j.graphdb.Result
 import org.neo4j.kernel.api.query.{ExplicitIndexUsage, PlannerInfo, SchemaIndexUsage}
-import org.neo4j.kernel.impl.query.QueryExecutionMonitor
+import org.neo4j.kernel.impl.query.{QueryExecution, QueryExecutionMonitor, ResultBuffer}
 import org.neo4j.kernel.monitoring.{Monitors => KernelMonitors}
 import org.neo4j.logging.Log
 import org.neo4j.values.virtual.MapValue
@@ -131,6 +132,46 @@ STATEMENT <: AnyRef](configV3_4: CypherCompilerConfiguration,
           innerResult.withNotifications(preParsingNotifications.toSeq: _*),
           runSafelyDuringRuntime
         )(kernelMonitors.newMonitor(classOf[QueryExecutionMonitor])))
+      }
+    }
+
+    override def run(transactionalContext: TransactionalContextWrapper,
+                     executionMode: CypherExecutionMode,
+                     params: MapValue,
+                     theResultBuffer: ResultBuffer
+                    ): QueryExecution = {
+      val innerExecutionMode = executionMode match {
+        case CypherExecutionMode.explain => ExplainMode
+        case CypherExecutionMode.profile => ProfileMode
+        case CypherExecutionMode.normal => NormalMode
+      }
+      runSafelyDuringPlanning {
+        val context = queryContext(transactionalContext)
+
+        val innerResult: InternalExecutionResult = inner.run(context, innerExecutionMode, params)
+
+        new QueryExecution {
+          override def waitForResult(): Boolean = {
+            innerResult.accept(new QueryResult.QueryResultVisitor[Exception] {
+              override def visit(row: QueryResult.Record): Boolean = {
+                theResultBuffer.prepareResultStage()
+                var i = 0
+                val values = row.fields()
+                while (i < values.length) {
+                  theResultBuffer.writeValueToStage(i, values(i))
+                  i += 1
+                }
+                theResultBuffer.commitResultStage()
+                true
+              }
+            })
+            false
+          }
+          override def resultBuffer(): ResultBuffer = theResultBuffer
+          override def terminate(): Unit = ???
+          override def header(): Array[String] = innerResult.fieldNames()
+          override def close(success: Boolean): Unit = ???
+        }
       }
     }
 

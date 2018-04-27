@@ -24,11 +24,17 @@ import org.neo4j.cypher.internal.compiler.v3_4.CacheCheckResult
 import org.neo4j.cypher.internal.runtime.interpreted.{LastCommittedTxIdProvider, TransactionalContextWrapper}
 import org.neo4j.graphdb.Result
 import org.neo4j.kernel.api.query.PlannerInfo
+import org.neo4j.kernel.impl.query.{QueryExecution, ResultBuffer}
 import org.neo4j.values.virtual.MapValue
 
 trait ExecutionPlan {
 
   def run(transactionalContext: TransactionalContextWrapper, executionMode: CypherExecutionMode, params: MapValue): Result
+
+  def run(transactionalContext: TransactionalContextWrapper,
+          executionMode: CypherExecutionMode,
+          params: MapValue,
+          resultBuffer: ResultBuffer): QueryExecution
 
   def isPeriodicCommit: Boolean
 

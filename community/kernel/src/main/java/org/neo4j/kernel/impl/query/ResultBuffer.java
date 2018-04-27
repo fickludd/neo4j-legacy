@@ -33,11 +33,16 @@ public interface ResultBuffer
     int valuesPerResult();
 
     /**
+     * Set how many values per result this buffer should be expecting.
+     */
+    void setValuesPerResult( int size );
+
+    /**
      * Prepare the result stage for the next result row.
      *
      * @return the id of the new row, or -1 if the stage could not be cleared.
      */
-    long prepareResultStage();
+    long prepareResultStage() throws ResultBufferException;
 
     /**
      * Write a value of the result stage.
@@ -54,5 +59,5 @@ public interface ResultBuffer
      *
      * @return true if the buffer can accept the next result row.
      */
-    boolean commitResultStage();
+    boolean commitResultStage() throws ResultBufferException;
 }

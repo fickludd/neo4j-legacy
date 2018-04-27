@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.util.v3_4.symbols.CypherType
 import org.neo4j.cypher.internal.v3_4.expressions.Expression
 import org.neo4j.cypher.internal.v3_4.logical.plans.LogicalPlan
 import org.neo4j.internal.kernel.api.Transaction
-import org.neo4j.kernel.impl.query.{QueryExecution, ResultBufferManager}
+import org.neo4j.kernel.impl.query.{QueryExecution, ResultBuffer}
 import org.neo4j.values.virtual.MapValue
 
 // =============================================== /
@@ -60,15 +60,14 @@ trait ExecutableQuery[State <: QueryExecutionState] {
     *
     * @param params Parameters of the execution.
     * @param state The execution state to use.
-    * @param resultBufferManager A result buffer manager, that will be used to allocate a ResultBuffer with
-    *                            the correct number of output columns.
+    * @param resultBuffer The result buffer to write results to.
     * @param transaction The transaction to execute the query in. If None, a new transaction will be begun
     *                    for the duration of this execution.
     * @return A QueryExecution representing the started exeucution.
     */
   def execute( params: MapValue,
                        state: State,
-                       resultBufferManager: ResultBufferManager,
+                       resultBuffer: ResultBuffer,
                        transaction: Option[Transaction]
                      ): QueryExecution
 }

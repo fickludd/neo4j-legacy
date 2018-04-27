@@ -151,7 +151,7 @@ public class ResetFuzzTest
             public void onSuccess( MapValue metadata )
             {
             }
-        } );
+        }, null );
 
         // Test random combinations of messages within a small budget of testing time.
         long deadline = System.currentTimeMillis() + 2 * 1000;

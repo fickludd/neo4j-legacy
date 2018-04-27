@@ -487,7 +487,7 @@ public class BoltStateMachineTest
         assertTrue( machine.ctx.closed );
 
         //But someone runs a query and thus opens a new transaction
-        statementProcessor.run( "RETURN 1", EMPTY_PARAMS );
+        statementProcessor.run( "RETURN 1", EMPTY_PARAMS, null );
         assertThat( statementProcessor.ctx.currentTransaction, notNullValue() );
 
         // Then, when we close again we should make sure the transaction is closed againg

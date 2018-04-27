@@ -32,7 +32,7 @@ public interface QueryExecutionEngine
     QueryExecution executeQuery( String query,
                                  MapValue parameters,
                                  TransactionalContext context,
-                                 ResultBufferManager resultBufferManager )
+                                 ResultBuffer resultBuffer )
             throws QueryExecutionKernelException;
 
     Result executeQuery( String query, Map<String,Object> parameters, TransactionalContext context )

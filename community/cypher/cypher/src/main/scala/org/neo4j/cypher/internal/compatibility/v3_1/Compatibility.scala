@@ -38,7 +38,7 @@ import org.neo4j.cypher.internal.{frontend, _}
 import org.neo4j.graphdb.Result
 import org.neo4j.kernel.GraphDatabaseQueryService
 import org.neo4j.kernel.api.query.{IndexUsage, PlannerInfo}
-import org.neo4j.kernel.impl.query.QueryExecutionMonitor
+import org.neo4j.kernel.impl.query.{QueryExecution, QueryExecutionMonitor, ResultBuffer}
 import org.neo4j.kernel.monitoring.{Monitors => KernelMonitors}
 import org.neo4j.logging.Log
 import org.neo4j.values.AnyValue
@@ -146,6 +146,8 @@ trait Compatibility {
 
       run(transactionalContext, executionMode, map.toMap)
     }
+
+    override def run(transactionalContext: TransactionalContextWrapperV3_4, executionMode: CypherExecutionMode, params: MapValue, resultBuffer: ResultBuffer): QueryExecution = ???
   }
 
 }

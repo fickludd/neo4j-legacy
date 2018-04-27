@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.compatibility.v3_4.runtime.SlotAllocation.Physi
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime._
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.compiled.EnterpriseRuntimeContext
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.executionplan.StandardInternalExecutionResult.IterateByAccepting
-import org.neo4j.cypher.internal.compatibility.v3_4.runtime.executionplan.{NewRuntimeSuccessRateMonitor, StandardInternalExecutionResult}
+import org.neo4j.cypher.internal.compatibility.v3_4.runtime.executionplan.StandardInternalExecutionResult
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.helpers.InternalWrapping.asKernelNotification
 import org.neo4j.cypher.internal.compatibility.v3_4.runtime.phases.CompilationState
 import org.neo4j.cypher.internal.compiler.v3_4.phases.LogicalPlanState

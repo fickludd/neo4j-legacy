@@ -19,35 +19,15 @@
  */
 package org.neo4j.kernel.impl.query;
 
+import java.io.IOException;
+
 /**
- * Representation of the execution of a query.
+ * IOException thrown by {@link ResultBuffer}.
  */
-public interface QueryExecution
+public class ResultBufferException extends IOException
 {
-
-    /**
-     * The names of the result columns
-     *
-     * @return Array containing the names of the result columns in order.
-     */
-    String[] header();
-
-    /**
-     * Returns the result buffer of this execution.
-     *
-     * @return the result buffer of this execution.
-     */
-    ResultBuffer resultBuffer();
-
-    /**
-     * Wait for more results to be written to the resultBuffer.
-     *
-     * @return true if more results were written.
-     */
-    boolean waitForResult();
-
-    /**
-     * Terminate this execution, throwing away any buffered results, and releasing any other resources.
-     */
-    void terminate();
+    public ResultBufferException( Throwable cause )
+    {
+        super( cause );
+    }
 }
