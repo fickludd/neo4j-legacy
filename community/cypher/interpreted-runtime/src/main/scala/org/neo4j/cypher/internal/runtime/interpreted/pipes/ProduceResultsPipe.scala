@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
 import org.neo4j.cypher.internal.runtime.interpreted.{ExecutionContext, MutableMaps}
 import org.neo4j.cypher.internal.util.v3_4.attribution.Id
+import org.neo4j.kernel.impl.query.ResultBuffer
 
 case class ProduceResultsPipe(source: Pipe, columns: Seq[String])
                              (val id: Id = Id.INVALID_ID) extends PipeWithSource(source) {
@@ -37,5 +38,30 @@ case class ProduceResultsPipe(source: Pipe, columns: Seq[String])
 
         ExecutionContext(m)
     }
+  }
+
+  def execute(state: QueryState, resultBuffer: ResultBuffer): Execution = {
+    new Execution(columns.toArray, source.createResults(state), resultBuffer)
+  }
+}
+
+class Execution(columns: Array[String],
+                sourceResult: Iterator[ExecutionContext],
+                resultBuffer: ResultBuffer) {
+
+  def nextRow(): Boolean = {
+    if (sourceResult.hasNext) {
+      val resultRowId = resultBuffer.prepareResultStage()
+      if (resultRowId >= 0) {
+        val next = sourceResult.next()
+        var i = 0
+        while (i < columns.length) {
+          resultBuffer.writeValueToStage(i, next(columns(i)))
+          i += 1
+        }
+        return resultBuffer.commitResultStage()
+      }
+    }
+    false
   }
 }

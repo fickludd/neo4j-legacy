@@ -35,8 +35,8 @@ case class InterpretedExecutableQuery(pipe: ProduceResultsPipe,
                        transaction: Option[Transaction]
                       ): QueryExecution = {
 
-    val resultIterator = pipe.createResults(state)
+    val execution = pipe.execute(state, resultBuffer)
     resultBuffer.setValuesPerResult(pipe.columns.size)
-    new InterpretedQueryExecution(pipe.columns.toArray, resultBuffer, resultIterator)
+    new InterpretedQueryExecution(pipe.columns.toArray, resultBuffer, execution)
   }
 }
