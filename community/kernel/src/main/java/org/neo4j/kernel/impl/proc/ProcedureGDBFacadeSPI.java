@@ -21,11 +21,9 @@ package org.neo4j.kernel.impl.proc;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Map;
 
 import org.neo4j.function.ThrowingFunction;
 import org.neo4j.graphdb.DependencyResolver;
-import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.graphdb.security.URLAccessValidationError;
@@ -40,7 +38,9 @@ import org.neo4j.kernel.impl.coreapi.CoreAPIAvailabilityGuard;
 import org.neo4j.kernel.impl.factory.DataSourceModule;
 import org.neo4j.kernel.impl.factory.GraphDatabaseFacade;
 import org.neo4j.kernel.impl.factory.PlatformModule;
+import org.neo4j.kernel.impl.query.QueryExecution;
 import org.neo4j.kernel.impl.query.QueryExecutionKernelException;
+import org.neo4j.kernel.impl.query.ResultBuffer;
 import org.neo4j.kernel.impl.query.TransactionalContext;
 import org.neo4j.kernel.impl.store.StoreId;
 import org.neo4j.values.virtual.MapValue;
@@ -97,26 +97,15 @@ class ProcedureGDBFacadeSPI implements GraphDatabaseFacade.SPI
     }
 
     @Override
-    public Result executeQuery( String query, Map<String,Object> parameters, TransactionalContext tc )
+    public QueryExecution executeQuery( String query,
+                                        MapValue parameters,
+                                        TransactionalContext tc,
+                                        ResultBuffer resultBuffer )
     {
         try
         {
             availability.assertDatabaseAvailable();
-            return sourceModule.queryExecutor.get().executeQuery( query, parameters, tc );
-        }
-        catch ( QueryExecutionKernelException e )
-        {
-            throw e.asUserException();
-        }
-    }
-
-    @Override
-    public Result executeQuery( String query, MapValue parameters, TransactionalContext tc )
-    {
-        try
-        {
-            availability.assertDatabaseAvailable();
-            return sourceModule.queryExecutor.get().executeQuery( query, parameters, tc );
+            return sourceModule.queryExecutor.get().executeQuery( query, parameters, tc, resultBuffer );
         }
         catch ( QueryExecutionKernelException e )
         {

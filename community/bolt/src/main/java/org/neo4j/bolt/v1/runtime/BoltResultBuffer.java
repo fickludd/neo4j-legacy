@@ -33,12 +33,6 @@ public class BoltResultBuffer implements ResultBuffer
     }
 
     @Override
-    public int valuesPerResult()
-    {
-        return stageSize;
-    }
-
-    @Override
     public void setValuesPerResult( int size )
     {
         stageSize = size;

@@ -104,15 +104,19 @@ import org.neo4j.kernel.impl.coreapi.RelationshipAutoIndexerFacade;
 import org.neo4j.kernel.impl.coreapi.TopLevelTransaction;
 import org.neo4j.kernel.impl.coreapi.schema.SchemaImpl;
 import org.neo4j.kernel.impl.query.Neo4jTransactionalContextFactory;
+import org.neo4j.kernel.impl.query.QueryExecution;
+import org.neo4j.kernel.impl.query.ResultBuffer;
 import org.neo4j.kernel.impl.query.TransactionalContext;
 import org.neo4j.kernel.impl.query.TransactionalContextFactory;
 import org.neo4j.kernel.impl.query.clientconnection.ClientConnectionInfo;
 import org.neo4j.kernel.impl.store.StoreId;
 import org.neo4j.kernel.impl.traversal.BidirectionalTraversalDescriptionImpl;
 import org.neo4j.kernel.impl.traversal.MonoDirectionalTraversalDescription;
+import org.neo4j.kernel.impl.util.DefaultValueMapper;
 import org.neo4j.kernel.impl.util.ValueUtils;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.storageengine.api.EntityType;
+import org.neo4j.values.ValueMapper;
 import org.neo4j.values.storable.Values;
 import org.neo4j.values.virtual.MapValue;
 
@@ -140,6 +144,7 @@ public class GraphDatabaseFacade implements GraphDatabaseAPI, EmbeddedProxySPI
     private TransactionalContextFactory contextFactory;
     private Config config;
     private RelationshipTypeTokenHolder relationshipTypeTokenHolder;
+    private ValueMapper valueMapper;
 
     /**
      * This is what you need to implemenent to get your very own {@link GraphDatabaseFacade}. This SPI exists as a thin
@@ -175,10 +180,10 @@ public class GraphDatabaseFacade implements GraphDatabaseAPI, EmbeddedProxySPI
         KernelTransaction beginTransaction( KernelTransaction.Type type, LoginContext loginContext, long timeout );
 
         /** Execute a cypher statement */
-        Result executeQuery( String query, Map<String,Object> parameters, TransactionalContext context );
-
-        /** Execute a cypher statement */
-        Result executeQuery( String query, MapValue parameters, TransactionalContext context );
+        QueryExecution executeQuery( String query,
+                                     MapValue parameters,
+                                     TransactionalContext context,
+                                     ResultBuffer resultBuffer );
 
         AutoIndexing autoIndexing();
 
@@ -229,6 +234,7 @@ public class GraphDatabaseFacade implements GraphDatabaseAPI, EmbeddedProxySPI
         } );
 
         this.contextFactory = Neo4jTransactionalContextFactory.create( spi, guard, txBridge, locker );
+        this.valueMapper = new DefaultValueMapper( this );
     }
 
     @Override
@@ -425,7 +431,9 @@ public class GraphDatabaseFacade implements GraphDatabaseAPI, EmbeddedProxySPI
     {
         TransactionalContext context =
                 contextFactory.newContext( ClientConnectionInfo.EMBEDDED_CONNECTION, transaction, query, parameters );
-        return spi.executeQuery( query, parameters, context );
+
+        ResultBuffer resultBuffer = new ResultQueryExecution.Buffer();
+        return new ResultQueryExecution( spi.executeQuery( query, parameters, context, resultBuffer ), valueMapper );
     }
 
     @Override

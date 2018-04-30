@@ -27,12 +27,6 @@ import org.neo4j.values.AnyValue;
 public interface ResultBuffer
 {
     /**
-     * Returns the number of values per result for this result buffer.
-     * @return the number of values per result for this result buffer.
-     */
-    int valuesPerResult();
-
-    /**
      * Set how many values per result this buffer should be expecting.
      */
     void setValuesPerResult( int size );

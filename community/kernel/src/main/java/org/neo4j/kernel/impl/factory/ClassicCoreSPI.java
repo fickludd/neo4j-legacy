@@ -21,10 +21,8 @@ package org.neo4j.kernel.impl.factory;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Map;
 
 import org.neo4j.graphdb.DependencyResolver;
-import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.graphdb.security.URLAccessValidationError;
@@ -35,7 +33,9 @@ import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.internal.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.kernel.api.explicitindex.AutoIndexing;
 import org.neo4j.kernel.impl.coreapi.CoreAPIAvailabilityGuard;
+import org.neo4j.kernel.impl.query.QueryExecution;
 import org.neo4j.kernel.impl.query.QueryExecutionKernelException;
+import org.neo4j.kernel.impl.query.ResultBuffer;
 import org.neo4j.kernel.impl.query.TransactionalContext;
 import org.neo4j.kernel.impl.store.StoreId;
 import org.neo4j.kernel.lifecycle.LifecycleException;
@@ -71,26 +71,15 @@ class ClassicCoreSPI implements GraphDatabaseFacade.SPI
     }
 
     @Override
-    public Result executeQuery( String query, MapValue parameters, TransactionalContext transactionalContext )
+    public QueryExecution executeQuery( String query,
+                                        MapValue parameters,
+                                        TransactionalContext transactionalContext,
+                                        ResultBuffer resultBuffer )
     {
         try
         {
             availability.assertDatabaseAvailable();
-            return dataSource.queryExecutor.get().executeQuery( query, parameters, transactionalContext );
-        }
-        catch ( QueryExecutionKernelException e )
-        {
-            throw e.asUserException();
-        }
-    }
-
-    @Override
-    public Result executeQuery( String query, Map<String, Object> parameters, TransactionalContext transactionalContext )
-    {
-        try
-        {
-            availability.assertDatabaseAvailable();
-            return dataSource.queryExecutor.get().executeQuery( query, parameters, transactionalContext );
+            return dataSource.queryExecutor.get().executeQuery( query, parameters, transactionalContext, resultBuffer );
         }
         catch ( QueryExecutionKernelException e )
         {

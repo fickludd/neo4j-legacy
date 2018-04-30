@@ -48,6 +48,8 @@ public interface QueryExecution
 
     /**
      * Terminate this execution, throwing away any buffered results, and releasing any other resources.
+     *
+     * TODO: what should this really be called... close? abort? terminate?
      */
     void terminate();
 }

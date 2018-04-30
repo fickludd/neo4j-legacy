@@ -41,10 +41,10 @@ import org.neo4j.cypher.internal.runtime.interpreted._
 import org.neo4j.cypher.internal.runtime.{ExplainMode, InternalExecutionResult, NormalMode, ProfileMode}
 import org.neo4j.cypher.internal.util.v3_4.InputPosition
 import org.neo4j.cypher.internal.v3_4.logical.plans.{ExplicitNodeIndexUsage, ExplicitRelationshipIndexUsage, SchemaIndexScanUsage, SchemaIndexSeekUsage}
-import org.neo4j.cypher.result.QueryResult
 import org.neo4j.graphdb.Result
 import org.neo4j.kernel.api.query.{ExplicitIndexUsage, PlannerInfo, SchemaIndexUsage}
 import org.neo4j.kernel.impl.query.{QueryExecution, QueryExecutionMonitor, ResultBuffer}
+import org.neo4j.kernel.impl.util.ValueUtils
 import org.neo4j.kernel.monitoring.{Monitors => KernelMonitors}
 import org.neo4j.logging.Log
 import org.neo4j.values.virtual.MapValue
@@ -150,27 +150,48 @@ STATEMENT <: AnyRef](configV3_4: CypherCompilerConfiguration,
 
         val innerResult: InternalExecutionResult = inner.run(context, innerExecutionMode, params)
 
+        theResultBuffer.setValuesPerResult(innerResult.fieldNames().length)
+
         new QueryExecution {
+
+          private val iter = innerResult.javaIterator
+          private val fields = innerResult.fieldNames()
+
           override def waitForResult(): Boolean = {
-            innerResult.accept(new QueryResult.QueryResultVisitor[Exception] {
-              override def visit(row: QueryResult.Record): Boolean = {
-                theResultBuffer.prepareResultStage()
-                var i = 0
-                val values = row.fields()
-                while (i < values.length) {
-                  theResultBuffer.writeValueToStage(i, values(i))
-                  i += 1
-                }
-                theResultBuffer.commitResultStage()
-                true
+            if (iter.hasNext) {
+              val row = iter.next()
+              theResultBuffer.prepareResultStage()
+              var i = 0
+              while (i < fields.length) {
+                theResultBuffer.writeValueToStage(i, ValueUtils.of(row.get(fields(i))))
+                i += 1
               }
-            })
-            false
+              theResultBuffer.commitResultStage()
+              true
+            }
+            else false
+
+//            WE CANNOT USE accept(), BECAUSE IT DOESN'T ALLOW BACK-PRESSURE
+//            THIS PROBLEM WILL GO AWAY WHEN THE INTEGRATION BECOMES BETTER
+//
+//            innerResult.accept(new QueryResult.QueryResultVisitor[Exception] {
+//              override def visit(row: QueryResult.Record): Boolean = {
+//                theResultBuffer.prepareResultStage()
+//                var i = 0
+//                val values = row.fields()
+//                while (i < values.length) {
+//                  theResultBuffer.writeValueToStage(i, values(i))
+//                  i += 1
+//                }
+//                theResultBuffer.commitResultStage()
+//                true
+//              }
+//            })
+//            false
           }
           override def resultBuffer(): ResultBuffer = theResultBuffer
-          override def terminate(): Unit = ???
+          override def terminate(): Unit = innerResult.close()
           override def header(): Array[String] = innerResult.fieldNames()
-          override def close(success: Boolean): Unit = ???
         }
       }
     }
