@@ -18,6 +18,7 @@ package org.neo4j.cypher.internal.v3_4.expressions
 
 import org.neo4j.cypher.internal.util.v3_4.Foldable._
 import org.neo4j.cypher.internal.util.v3_4._
+import org.opencypher.okapi.trees.{BottomUp, TreeNode}
 
 import scala.collection.immutable.Stack
 
@@ -64,7 +65,7 @@ object Expression {
 
 abstract class Expression extends ASTNode {
 
-  self =>
+  self: Expression =>
 
   import Expression.TreeAcc
 
@@ -111,9 +112,9 @@ abstract class Expression extends ASTNode {
   def copyAndReplace(variable: LogicalVariable) = new {
     def by(replacement: => Expression): Expression = {
       val replacedOccurences = occurrences(variable)
-      self.endoRewrite(bottomUp(Rewriter.lift {
+      BottomUp[Expression]( {
         case occurrence: Variable if replacedOccurences(Ref(occurrence)) => replacement
-      }))
+      }).rewrite(self)
     }
   }
 

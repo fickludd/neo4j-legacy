@@ -115,6 +115,12 @@
       <artifactId>annotations</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.opencypher</groupId>
+      <artifactId>okapi-trees</artifactId>
+      <version>1.0.0-beta6</version>
+    </dependency>
+
     <!-- shared java test dependencies -->
     <dependency>
       <groupId>junit</groupId>

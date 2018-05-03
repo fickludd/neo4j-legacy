@@ -16,27 +16,25 @@
  */
 package org.neo4j.cypher.internal.util.v3_4
 
-import org.neo4j.cypher.internal.util.v3_4.Rewritable._
+import org.opencypher.okapi.trees.AbstractTreeNode
 
-trait ASTNode extends Product with Foldable with Rewritable {
-
-  self =>
+abstract class ASTNode extends AbstractTreeNode[ASTNode] {
 
   def position: InputPosition
 
-  def dup(children: Seq[AnyRef]): this.type =
-    if (children.iterator eqElements this.children)
-      this
-    else {
-      val constructor = Rewritable.copyConstructor(this)
-      val params = constructor.getParameterTypes
-      val args = children.toVector
-      val hasExtraParam = params.length == args.length + 1
-      val lastParamIsPos = params.last.isAssignableFrom(classOf[InputPosition])
-      val ctorArgs = if (hasExtraParam && lastParamIsPos) args :+ this.position else args
-      val duped = constructor.invoke(this, ctorArgs: _*)
-      duped.asInstanceOf[self.type]
-    }
+  //  def dup(children: Seq[AnyRef]): this.type =
+  //    if (children.iterator eqElements this.children)
+  //      this
+  //    else {
+  //      val constructor = Rewritable.copyConstructor(this)
+  //      val params = constructor.getParameterTypes
+  //      val args = children.toVector
+  //      val hasExtraParam = params.length == args.length + 1
+  //      val lastParamIsPos = params.last.isAssignableFrom(classOf[InputPosition])
+  //      val ctorArgs = if (hasExtraParam && lastParamIsPos) args :+ this.position else args
+  //      val duped = constructor.invoke(this, ctorArgs: _*)
+  //      duped.asInstanceOf[self.type]
+  //    }
 
   def asCanonicalStringVal: String = toString
 }

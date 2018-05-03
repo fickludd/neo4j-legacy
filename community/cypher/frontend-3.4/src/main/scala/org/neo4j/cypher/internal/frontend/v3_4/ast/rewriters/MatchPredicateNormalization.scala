@@ -16,10 +16,11 @@
  */
 package org.neo4j.cypher.internal.frontend.v3_4.ast.rewriters
 
-import org.neo4j.cypher.internal.util.v3_4.{InputPosition, Rewriter, topDown}
+import org.neo4j.cypher.internal.util.v3_4.{ASTNode, InputPosition, Rewriter, topDown}
 import org.neo4j.cypher.internal.frontend.v3_4.ast._
 import org.neo4j.cypher.internal.frontend.v3_4.helpers.calculateUsingGetDegree
 import org.neo4j.cypher.internal.v3_4.expressions._
+import org.opencypher.okapi.trees.{BottomUp, TreeRewriter}
 
 abstract class MatchPredicateNormalization(normalizer: MatchPredicateNormalizer, getDegreeRewriting: Boolean) extends Rewriter {
 
@@ -27,9 +28,9 @@ abstract class MatchPredicateNormalization(normalizer: MatchPredicateNormalizer,
 
   private val rewriter = Rewriter.lift {
     case m@Match(_, pattern, _, where) =>
-      val predicates = pattern.fold(Vector.empty[Expression]) {
-        case pattern: AnyRef if normalizer.extract.isDefinedAt(pattern) => acc => acc ++ normalizer.extract(pattern)
-        case _                                                          => identity
+      val predicates = pattern.foldLeft(Vector.empty[Expression]) {
+        case (acc, pattern: AnyRef) if normalizer.extract.isDefinedAt(pattern) => acc ++ normalizer.extract(pattern)
+        case (acc, _)                                                          => acc
       }
 
       val rewrittenPredicates: List[Expression] = (predicates ++ where.map(_.expression)).toList
@@ -42,9 +43,9 @@ abstract class MatchPredicateNormalization(normalizer: MatchPredicateNormalizer,
 
       val newWhere: Option[Where] = predOpt.map {
         exp =>
-          val pos: InputPosition = where.fold(m.position)(_.position)
+          val pos: InputPosition = where.map(_.position).getOrElse(m.position)
           val e = if (getDegreeRewriting)
-            exp.endoRewrite(whereRewriter)
+            whereRewriter.rewrite(exp)
           else
             exp
           Where(e)(pos)
@@ -56,7 +57,7 @@ abstract class MatchPredicateNormalization(normalizer: MatchPredicateNormalizer,
       )(m.position)
   }
 
-  private def whereRewriter: Rewriter = Rewriter.lift {
+  private def whereRewriter: TreeRewriter[ASTNode, ASTNode] = BottomUp[ASTNode]({
     // WHERE (a)-[:R]->() to WHERE GetDegree( (a)-[:R]->()) > 0
     case p@PatternExpression(RelationshipsPattern(RelationshipChain(NodePattern(Some(node), List(), None),
                                                                     RelationshipPattern(None, types, None, None, dir, _),
@@ -69,12 +70,12 @@ abstract class MatchPredicateNormalization(normalizer: MatchPredicateNormalizer,
       GreaterThan(calculateUsingGetDegree(p, node, types, dir.reversed), SignedDecimalIntegerLiteral("0")(p.position))(p.position)
 
     case a@And(lhs, rhs) =>
-      And(lhs.endoRewrite(whereRewriter), rhs.endoRewrite(whereRewriter))(a.position)
+      And(whereRewriter.rewrite(lhs), whereRewriter.rewrite(rhs))(a.position)
 
-    case o@Or(lhs, rhs) => Or(lhs.endoRewrite(whereRewriter), rhs.endoRewrite(whereRewriter))(o.position)
+    case o@Or(lhs, rhs) => Or(whereRewriter.rewrite(lhs), whereRewriter.rewrite(rhs))(o.position)
 
-    case n@Not(e) => Not(e.endoRewrite(whereRewriter))(n.position)
-  }
+    case n@Not(e) => Not(whereRewriter.rewrite(e))(n.position)
+  })
 
   private val instance = topDown(rewriter, _.isInstanceOf[Expression])
 }

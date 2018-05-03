@@ -277,20 +277,20 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
           specifyType(CTBoolean, x)
 
       case x:ReduceExpression =>
-        check(ctx, x.init) chain
+        check(ctx, x.initializer) chain
           check(ctx, x.list) chain
           expectType(CTList(CTAny).covariant, x.list) chain
           withScopedState {
             val indexType: TypeGenerator = s =>
               (types(x.list)(s) constrain CTList(CTAny)).unwrapLists
-            val accType: TypeGenerator = types(x.init)
+            val accType: TypeGenerator = types(x.initializer)
 
             declareVariable(x.variable, indexType) chain
               declareVariable(x.accumulator, accType) chain
               check(SemanticContext.Simple, x.expression)
           } chain
-          expectType(types(x.init), x.expression, AccumulatorExpressionTypeMismatchMessageGenerator) chain
-          specifyType(s => types(x.init)(s) leastUpperBounds types(x.expression)(s), x) chain
+          expectType(types(x.initializer), x.expression, AccumulatorExpressionTypeMismatchMessageGenerator) chain
+          specifyType(s => types(x.initializer)(s) leastUpperBounds types(x.expression)(s), x) chain
           FilteringExpressions.failIfAggregating(x.expression)
 
       case x:ListLiteral =>

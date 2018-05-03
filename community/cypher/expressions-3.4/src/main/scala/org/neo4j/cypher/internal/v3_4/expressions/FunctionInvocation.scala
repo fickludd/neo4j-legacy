@@ -31,7 +31,7 @@ object FunctionInvocation {
   FunctionInvocation(Namespace()(position), functionName, distinct, args)(position)
 }
 
-case class FunctionInvocation(namespace: Namespace, functionName: FunctionName, distinct: Boolean, args: IndexedSeq[Expression])
+case class FunctionInvocation(namespace: Namespace, functionName: FunctionName, distinct: Boolean, aRGs: IndexedSeq[Expression])
                              (val position: InputPosition) extends Expression {
   val name: String = (namespace.parts :+ functionName.name).mkString(".")
   val function: functions.Function = functions.Function.lookup.getOrElse(name.toLowerCase, UnresolvedFunction)
@@ -41,7 +41,7 @@ case class FunctionInvocation(namespace: Namespace, functionName: FunctionName, 
     case _ => false
   }
 
-  override def asCanonicalStringVal = s"$name(${args.map(_.asCanonicalStringVal).mkString(",")})"
+  override def asCanonicalStringVal = s"$name(${aRGs.map(_.asCanonicalStringVal).mkString(",")})"
 }
 
 case class FunctionName(name: String)(val position: InputPosition) extends SymbolicName {
@@ -49,5 +49,4 @@ case class FunctionName(name: String)(val position: InputPosition) extends Symbo
     case FunctionName(other) => other.toLowerCase == name.toLowerCase
     case _ => false
   }
-  override def hashCode = name.toLowerCase.hashCode
 }

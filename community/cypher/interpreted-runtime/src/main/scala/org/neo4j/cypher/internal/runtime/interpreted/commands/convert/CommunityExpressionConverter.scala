@@ -89,7 +89,7 @@ object CommunityExpressionConverter extends ExpressionConverter {
         case e: ast.AnyIterablePredicate => commands.AnyInList(self.toCommandExpression(e.expression), e.variable.name, e.innerPredicate.map(self.toCommandPredicate).getOrElse(predicates.True()))
         case e: ast.NoneIterablePredicate => commands.NoneInList(self.toCommandExpression(e.expression), e.variable.name, e.innerPredicate.map(self.toCommandPredicate).getOrElse(predicates.True()))
         case e: ast.SingleIterablePredicate => commands.SingleInList(self.toCommandExpression(e.expression), e.variable.name, e.innerPredicate.map(self.toCommandPredicate).getOrElse(predicates.True()))
-        case e: ast.ReduceExpression => commandexpressions.ReduceFunction(self.toCommandExpression(e.list), e.variable.name, self.toCommandExpression(e.expression), e.accumulator.name, self.toCommandExpression(e.init))
+        case e: ast.ReduceExpression => commandexpressions.ReduceFunction(self.toCommandExpression(e.list), e.variable.name, self.toCommandExpression(e.expression), e.accumulator.name, self.toCommandExpression(e.initializer))
         case e: ast.PathExpression => self.toCommandProjectedPath(e)
         case e: pipes.NestedPipeExpression => commandexpressions.NestedPipeExpression(e.pipe, self.toCommandExpression(e.projection))
         case e: ast.GetDegree => getDegree(e, self)

@@ -18,6 +18,9 @@ package org.neo4j.cypher.internal.v3_4.expressions
 
 import org.neo4j.cypher.internal.util.v3_4.{ASTNode, InputPosition}
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
 object Pattern {
   sealed trait SemanticContext
 
@@ -43,25 +46,21 @@ object Pattern {
   object findDuplicateRelationships extends (Pattern => Set[Seq[LogicalVariable]]) {
 
     def apply(pattern: Pattern): Set[Seq[LogicalVariable]] = {
-      val (seen, duplicates) = pattern.fold((Set.empty[LogicalVariable], Seq.empty[LogicalVariable])) {
+      val seen = mutable.Set[LogicalVariable]()
+      val duplicates = ArrayBuffer[LogicalVariable]()
+      pattern.foreach {
         case RelationshipChain(_, RelationshipPattern(Some(rel), _, None, _, _, _), _) =>
-          (acc) =>
-            val (seen, duplicates) = acc
+          if (seen.contains(rel)) duplicates += rel
+          seen += rel
 
-            val newDuplicates = if (seen.contains(rel)) duplicates :+ rel else duplicates
-            val newSeen = seen + rel
-
-            (newSeen, newDuplicates)
-
-        case _ =>
-          identity
+        case _ => // that's fine
       }
 
       val m0: Map[String, Seq[LogicalVariable]] = duplicates.groupBy(_.name)
 
       val resultMap = seen.foldLeft(m0) {
         case (m, ident @ Variable(name)) if m.contains(name) => m.updated(name, Seq(ident) ++ m(name))
-        case (m, _)                                            => m
+        case (m, _)                                          => m
       }
 
       resultMap.values.toSet
@@ -71,9 +70,9 @@ object Pattern {
 
 case class Pattern(patternParts: Seq[PatternPart])(val position: InputPosition) extends ASTNode {
 
-  lazy val length = this.fold(0) {
-    case RelationshipChain(_, _, _) => _ + 1
-    case _ => identity
+  lazy val length: Long = this.foldLeft(0) {
+              case (acc, RelationshipChain(_, _, _)) => acc + 1
+              case (acc, _) => acc
   }
 }
 
@@ -142,8 +141,6 @@ class InvalidNodePattern(
         id == that.id
     case _ => false
   }
-
-  override def hashCode(): Int = 31 * id.hashCode()
 
   override def allVariables: Set[LogicalVariable] = Set.empty
 }

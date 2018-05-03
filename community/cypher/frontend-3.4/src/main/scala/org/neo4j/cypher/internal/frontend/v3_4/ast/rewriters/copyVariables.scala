@@ -16,11 +16,12 @@
  */
 package org.neo4j.cypher.internal.frontend.v3_4.ast.rewriters
 
-import org.neo4j.cypher.internal.util.v3_4.{Rewriter, bottomUp}
-import org.neo4j.cypher.internal.v3_4.expressions.Variable
+import org.neo4j.cypher.internal.util.v3_4.ASTNode
+import org.neo4j.cypher.internal.v3_4.expressions.{Expression, Variable}
+import org.opencypher.okapi.trees.BottomUp
 
-case object copyVariables extends Rewriter {
-  private val instance = bottomUp(Rewriter.lift { case variable: Variable => variable.copyId })
+case object copyVariables {
+  private val instance = BottomUp[ASTNode]( { case variable: Variable => variable.copyId } )
 
-  def apply(that: AnyRef): AnyRef = instance.apply(that)
+  def apply(that: Expression): Expression = instance.rewrite(that).asInstanceOf[Expression]
 }

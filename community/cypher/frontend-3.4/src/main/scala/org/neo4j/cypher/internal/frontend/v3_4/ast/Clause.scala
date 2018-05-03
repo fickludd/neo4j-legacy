@@ -28,7 +28,7 @@ import org.neo4j.cypher.internal.v3_4.expressions.Expression.SemanticContext
 import org.neo4j.cypher.internal.v3_4.expressions._
 import org.neo4j.cypher.internal.v3_4.functions
 
-sealed trait Clause extends ASTNode with SemanticCheckable {
+sealed trait Clause extends ASTNode[Clause] with SemanticCheckable {
   def name: String
 
   def returnColumns: List[String] =
@@ -321,9 +321,9 @@ case class Match(
   }
 
   private def containsLabelPredicate(variable: String, label: String): Boolean = {
-    var labels = pattern.fold(Seq.empty[String]) {
-      case NodePattern(Some(Variable(id)), nodeLabels, _) if variable == id =>
-        list => list ++ nodeLabels.map(_.name)
+    var labels = pattern.foldLeft(Seq.empty[String]) {
+      case (list, NodePattern(Some(Variable(id)), nodeLabels, _)) if variable == id =>
+        list ++ nodeLabels.map(_.name)
     }
     labels = where match {
       case Some(innerWhere) => innerWhere.treeFold(labels) {

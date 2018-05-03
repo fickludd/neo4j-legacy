@@ -140,7 +140,7 @@ object SingleIterablePredicate {
     SingleIterablePredicate(FilterScope(variable, innerPredicate)(position), expression)(position)
 }
 
-case class ReduceExpression(scope: ReduceScope, init: Expression, list: Expression)(val position: InputPosition) extends Expression {
+case class ReduceExpression(scope: ReduceScope, initializer: Expression, list: Expression)(val position: InputPosition) extends Expression {
   def variable = scope.variable
   def accumulator = scope.accumulator
   def expression = scope.expression

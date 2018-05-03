@@ -20,7 +20,9 @@ import org.neo4j.cypher.internal.frontend.v3_4.ast.conditions._
 import org.neo4j.cypher.internal.frontend.v3_4.ast.{Statement, UnaliasedReturnItem}
 import org.neo4j.cypher.internal.frontend.v3_4.helpers.rewriting.{RewriterCondition, RewriterStepSequencer}
 import org.neo4j.cypher.internal.frontend.v3_4.semantics.SemanticState
+import org.neo4j.cypher.internal.util.v3_4.ASTNode
 import org.neo4j.cypher.internal.v3_4.expressions.NotEquals
+import org.opencypher.okapi.trees.BottomUp
 
 class ASTRewriter(rewriterSequencer: (String) => RewriterStepSequencer,
                   literalExtraction: LiteralExtraction,
@@ -62,7 +64,7 @@ class ASTRewriter(rewriterSequencer: (String) => RewriterStepSequencer,
       inlineNamedPathsInPatternComprehensions
     )
 
-    val rewrittenStatement = statement.endoRewrite(contract.rewriter)
+    val rewrittenStatement = BottomUp[ASTNode](contract.rewriter).rewrite(statement)
     val (extractParameters, extractedParameters) = literalReplacement(rewrittenStatement, literalExtraction)
 
     (rewrittenStatement.endoRewrite(extractParameters), extractedParameters, contract.postConditions)
