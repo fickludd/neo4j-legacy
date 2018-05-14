@@ -63,7 +63,8 @@ class CheckForLoadCsvAndMatchOnLargeLabelTest
         "foo",
         HasHeaders,
         None,
-        legacyCsvQuoteEscaping = false
+        legacyCsvQuoteEscaping = false,
+        false
       )
 
     val plan = CartesianProduct(
@@ -82,7 +83,8 @@ class CheckForLoadCsvAndMatchOnLargeLabelTest
         "foo",
         HasHeaders,
         None,
-        legacyCsvQuoteEscaping = false
+        legacyCsvQuoteEscaping = false,
+        false
       )
 
     val plan =
@@ -97,7 +99,7 @@ class CheckForLoadCsvAndMatchOnLargeLabelTest
   test("should not notify when doing large label scan on top of LoadCSV") {
     val start = NodeByLabelScan("bar", LabelName(labelOverThreshold)(pos), Set.empty)
     val plan =
-      LoadCSV(start, url, "foo", HasHeaders, None, legacyCsvQuoteEscaping = false)
+      LoadCSV(start, url, "foo", HasHeaders, None, legacyCsvQuoteEscaping = false, false)
 
     checker(plan) should equal(None)
   }

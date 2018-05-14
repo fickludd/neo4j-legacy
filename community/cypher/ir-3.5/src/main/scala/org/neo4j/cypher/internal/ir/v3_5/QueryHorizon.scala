@@ -55,7 +55,11 @@ case class UnwindProjection(variable: String, exp: Expression) extends QueryHori
   override def preferredStrictness = None
 }
 
-case class LoadCSVProjection(variable: String, url: Expression, format: CSVFormat, fieldTerminator: Option[StringLiteral]) extends QueryHorizon {
+case class LoadCSVProjection(variable: String,
+                             url: Expression,
+                             format: CSVFormat,
+                             fieldTerminator: Option[StringLiteral],
+                             periodicCommit: Boolean) extends QueryHorizon {
   override def exposedSymbols(coveredIds: Set[String]): Set[String] = coveredIds + variable
 
   override def dependingExpressions = Seq(url)

@@ -17,6 +17,7 @@
 package org.neo4j.cypher.internal.frontend.v3_5.parser
 
 import org.neo4j.cypher.internal.frontend.v3_5.ast
+import org.neo4j.cypher.internal.frontend.v3_5.ast.{PeriodicCommitHint, QueryPart, SingleQuery}
 import org.parboiled.scala._
 
 trait Query extends Parser
@@ -36,8 +37,17 @@ trait Query extends Parser
     oneOrMore(Clause, separator = WS) ~~>> (ast.SingleQuery(_))
   }
 
+  def withPeriodicCommit(query: SingleQuery, hint: PeriodicCommitHint): QueryPart = {
+    query.clauses.head match {
+      case loadCsv: ast.LoadCSV =>
+        ast.SingleQuery(loadCsv.copy(periodicCommit = true)(loadCsv.position) +: query.clauses.tail)
+    }
+    query
+  }
+
+
   def BulkImportQuery: Rule1[ast.Query] = rule {
-    group(PeriodicCommitHint ~ WS ~ LoadCSVQuery) ~~>> ((hint, query) => ast.Query(Some(hint), query))
+    group(PeriodicCommitHint ~ WS ~ LoadCSVQuery) ~~>> ((hint, query) => ast.Query(Some(hint), withPeriodicCommit(query, hint)))
   }
 
   def LoadCSVQuery: Rule1[ast.SingleQuery] = rule {

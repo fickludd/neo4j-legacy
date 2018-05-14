@@ -62,8 +62,8 @@ case object PlanEventHorizon
       case ProcedureCallProjection(call) =>
         context.logicalPlanProducer.planCallProcedure(plan, call, context)
 
-      case LoadCSVProjection(variableName, url, format, fieldTerminator) =>
-        context.logicalPlanProducer.planLoadCSV(plan, variableName, url, format, fieldTerminator, context)
+      case LoadCSVProjection(variableName, url, format, fieldTerminator, periodicCommit) =>
+        context.logicalPlanProducer.planLoadCSV(plan, variableName, url, format, fieldTerminator, context, periodicCommit)
 
       case PassthroughAllHorizon() =>
         context.logicalPlanProducer.planPassAll(plan, context)

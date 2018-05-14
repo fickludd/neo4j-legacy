@@ -39,7 +39,8 @@ class CheckForEagerLoadCsvTest extends CypherFunSuite with LogicalPlanningTestSu
           "foo",
           NoHeaders,
           None,
-          legacyCsvQuoteEscaping = false
+          legacyCsvQuoteEscaping = false,
+          false
         )
       )
 
@@ -56,7 +57,8 @@ class CheckForEagerLoadCsvTest extends CypherFunSuite with LogicalPlanningTestSu
         "foo",
         NoHeaders,
         None,
-        legacyCsvQuoteEscaping = false
+        legacyCsvQuoteEscaping = false,
+        false
       )
 
     checkForEagerLoadCsv(plan) should equal(None)

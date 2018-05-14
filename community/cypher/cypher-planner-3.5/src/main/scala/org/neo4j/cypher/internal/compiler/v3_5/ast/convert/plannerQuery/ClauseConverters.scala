@@ -57,7 +57,8 @@ object ClauseConverters {
         variable = clause.variable.name,
         url = clause.urlString,
         format = if (clause.withHeaders) HasHeaders else NoHeaders,
-        clause.fieldTerminator)
+        clause.fieldTerminator,
+        periodicCommit = clause.periodicCommit)
     ).withTail(PlannerQuery.empty)
 
   private def asSelections(optWhere: Option[Where]) = Selections(optWhere.

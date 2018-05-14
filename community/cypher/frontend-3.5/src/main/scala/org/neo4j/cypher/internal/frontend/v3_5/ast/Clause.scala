@@ -43,7 +43,8 @@ case class LoadCSV(
                     withHeaders: Boolean,
                     urlString: Expression,
                     variable: Variable,
-                    fieldTerminator: Option[StringLiteral]
+                    fieldTerminator: Option[StringLiteral],
+                    periodicCommit: Boolean = false
                   )(val position: InputPosition) extends Clause with SemanticAnalysisTooling {
   override def name: String = "LOAD CSV"
 

@@ -39,7 +39,8 @@ case class LoadCSVPipe(source: Pipe,
                        urlExpression: Expression,
                        variable: String,
                        fieldTerminator: Option[String],
-                       legacyCsvQuoteEscaping: Boolean)
+                       legacyCsvQuoteEscaping: Boolean,
+                       periodicCommit: Boolean)
                       (val id: Id = Id.INVALID_ID)
   extends PipeWithSource(source) {
 
@@ -106,21 +107,24 @@ case class LoadCSVPipe(source: Pipe,
   }
 
   override protected def internalCreateResults(input: Iterator[ExecutionContext], state: QueryState): Iterator[ExecutionContext] = {
-    input.flatMap(context => {
-      val urlString: TextValue = urlExpression(context, state).asInstanceOf[TextValue]
-      val url = getImportURL(urlString.stringValue(), state.query)
+    if (periodicCommit)
+      state.periodicCommitIterator
+    else
+      input.flatMap(context => {
+        val urlString: TextValue = urlExpression(context, state).asInstanceOf[TextValue]
+        val url = getImportURL(urlString.stringValue(), state.query)
 
-      format match {
-        case HasHeaders =>
-          val iterator: Iterator[Array[Value]] = state.resources.getCsvIterator(url, fieldTerminator, legacyCsvQuoteEscaping, headers = true)
-            .map(_.map(s => Values.stringOrNoValue(s)))
-          val headers = if (iterator.nonEmpty) iterator.next().toIndexedSeq else IndexedSeq.empty // First row is headers
-          new IteratorWithHeaders(headers, context, iterator)
-        case NoHeaders =>
-          val iterator: Iterator[Array[Value]] = state.resources.getCsvIterator(url, fieldTerminator, legacyCsvQuoteEscaping, headers = false)
-            .map(_.map(s => Values.stringOrNoValue(s)))
-          new IteratorWithoutHeaders(context, iterator)
-      }
-    })
+        format match {
+          case HasHeaders =>
+            val iterator: Iterator[Array[Value]] = state.resources.getCsvIterator(url, fieldTerminator, legacyCsvQuoteEscaping, headers = true)
+              .map(_.map(s => Values.stringOrNoValue(s)))
+            val headers = if (iterator.nonEmpty) iterator.next().toIndexedSeq else IndexedSeq.empty // First row is headers
+            new IteratorWithHeaders(headers, context, iterator)
+          case NoHeaders =>
+            val iterator: Iterator[Array[Value]] = state.resources.getCsvIterator(url, fieldTerminator, legacyCsvQuoteEscaping, headers = false)
+              .map(_.map(s => Values.stringOrNoValue(s)))
+            new IteratorWithoutHeaders(context, iterator)
+        }
+      })
   }
 }
