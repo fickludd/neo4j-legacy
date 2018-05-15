@@ -866,6 +866,33 @@ public class ProcedureIT
     }
 
     @Test
+    public void TBD()
+    {
+        // When
+        try ( Transaction tx = db.beginTx() )
+        {
+            List<Long> input = Arrays.asList( 1L, 2L, 3L, 4L, 5L );
+            List<Long> output = new ArrayList<>();
+            Result result = db.execute( "CALL test.stream.throwOnLastElement($ids)", map( "ids", input ) );
+
+            try
+            {
+                while ( result.hasNext() )
+                {
+                    output.add( (Long) result.next().values().iterator().next() );
+                    // this should work until it is asked to provide "4" (at which point it tries to prepare "5" and should throw)
+                }
+            }
+            catch ( QueryExecutionException q )
+            {
+                assertEquals( "IllegalStateException", q.getCause().getCause().getCause().getCause().getClass().getSimpleName() );  // TODO: Change this
+                assertTrue( output.equals( Arrays.asList( 1L, 2L, 3L ) ) );
+            }
+            tx.success();
+        }
+    }
+
+    @Test
     public void shouldFailToShutdown()
     {
         // Expect
@@ -1743,6 +1770,22 @@ public class ProcedureIT
                         onCloseCalled[(int) index] = true;
                     } );
 
+        }
+
+        @Procedure( "test.stream.throwOnLastElement" )
+        public Stream<Output> throwOnLastElement( @Name( "ids" ) List<Long> ids )
+        {
+            System.out.println( "in test.stream.throwOnLastElement for ids: " + ids.toString() );
+
+            long lastId = ids.get( ids.size() - 1 );
+            return ids.stream().map( id -> {
+
+                if ( id == lastId )
+                {
+                    throw new IllegalStateException();
+                }
+                return new Output( id );
+            } );
         }
     }
 
