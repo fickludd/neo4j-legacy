@@ -22,6 +22,11 @@ package org.neo4j.tooling.procedure;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
@@ -29,12 +34,14 @@ import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.harness.junit.Neo4jRule;
 import org.neo4j.kernel.configuration.Settings;
+import org.neo4j.procedure.Name;
+import org.neo4j.procedure.Procedure;
 import org.neo4j.server.configuration.ServerSettings;
 import org.neo4j.test.rule.SuppressOutput;
 import org.neo4j.tooling.procedure.procedures.valid.Procedures;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+import static org.junit.Assert.assertEquals;
 
 public class ProcedureTest
 {
@@ -46,7 +53,8 @@ public class ProcedureTest
     @Rule
     public Neo4jRule graphDb = new Neo4jRule()
             .withConfig( ServerSettings.script_enabled, Settings.TRUE )
-            .withProcedure( PROCEDURES_CLASS );
+            .withProcedure( PROCEDURES_CLASS )
+            .withProcedure( ThrowingProc.class );
     private String procedureNamespace = PROCEDURES_CLASS.getPackage().getName();
 
     @Test
@@ -118,9 +126,63 @@ public class ProcedureTest
 
     }
 
+    @Test
+    public void TBD()
+    {
+        // When
+        try ( Driver driver = GraphDatabase.driver( graphDb.boltURI(), configuration() );
+                Session session = driver.session() )
+        {
+            List<Long> output = new ArrayList<>();
+            StatementResult run = session.run( "CALL test.stream.throwOnLastElement([1,2,3,4,5])" );
+
+            try
+            {
+                while ( run.hasNext() )
+                {
+                    output.add( run.next().get( 0 ).asLong() );
+                    // this should work until it is asked to provide "4" (at which point it tries to prepare "5" and should throw)
+                }
+            }
+            catch ( Throwable t )
+            {
+                assertEquals( Arrays.asList( 1L, 2L, 3L ), output );
+                assertEquals( t.getMessage(), "IllegalStateException" );  // TODO: Change this
+            }
+        }
+    }
+
     private Config configuration()
     {
         return Config.build().withEncryptionLevel( Config.EncryptionLevel.NONE ).toConfig();
     }
 
+    public static class ThrowingProc
+    {
+        @Procedure( "test.stream.throwOnLastElement" )
+        public Stream<Output> throwOnLastElement( @Name( "ids" ) List<Long> ids )
+        {
+            System.out.println( "in test.stream.throwOnLastElement for ids: " + ids.toString() );
+
+            long lastId = ids.get( ids.size() - 1 );
+            return ids.stream().map( id -> {
+
+                if ( id == lastId )
+                {
+                    throw new IllegalStateException();
+                }
+                return new Output( id );
+            } );
+        }
+    }
+
+    public static class Output
+    {
+        public final long someVal;
+
+        public Output( long someVal )
+        {
+            this.someVal = someVal;
+        }
+    }
 }
